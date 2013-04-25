@@ -1,4 +1,4 @@
-multitask <- function (X, y, tasks, groups) {
-	.Call("multitask", X, y, tasks, groups, PACKAGE = "multitask")
+multitask <- function (X, y, tasks, groups, lambda, eps = 1e-12) {
+	.Call("multitask", X, y, tasks, groups, lambda, eps, PACKAGE = "multitask")
 }
 

@@ -2,18 +2,20 @@
 #include "shotgun/common.h"
 #include "multitask.h"
 
-SEXP multitask(SEXP X0, SEXP y0, SEXP tasks0, SEXP groups0)
+SEXP multitask(SEXP X0, SEXP y0, SEXP tasks0, SEXP groups0, SEXP lambda0, SEXP eps0)
 {
-	/*convert parameters to Rcpp types*/
-	Rcpp::NumericMatrix A(X0); /*using name A to be consistent with Shotgun library*/
+	//convert parameters to Rcpp types
+	Rcpp::NumericMatrix A(X0); //using name A to be consistent with Shotgun library
 	Rcpp::NumericVector y(y0);
 	Rcpp::CharacterVector tasks(tasks0);
 	Rcpp::NumericMatrix groups(groups0);
+	Rcpp::NumericVector lambda(lambda0); //one-element vector
+	Rcpp::NumericVector eps(eps0); //one-element vector
 	Rcpp::NumericMatrix result(X0);
 	
 	shotgun_data data;
 
-	/*init data.A_cols and data.A_rows*/
+	//init data.A_cols and data.A_rows
 	int M = A.nrow();
 	int N = A.ncol();
 	data.A_cols.resize(N);
@@ -32,13 +34,11 @@ SEXP multitask(SEXP X0, SEXP y0, SEXP tasks0, SEXP groups0)
 	data.nx = N;
 	data.ny = M;
 
-	double lambda = 1.0;
 	int regpathLength = 0;
-	double threshold = 1.0e-5;
 	int maxIter = 100;
 	int verbose = 1;
 
-	solveLasso(&data, lambda, regpathLength, threshold, maxIter, verbose);
+	solveLasso(&data, lambda[0], regpathLength, eps[0], maxIter, verbose);
 	
 	return result;
 }

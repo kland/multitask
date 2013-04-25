@@ -15,10 +15,11 @@ test <- function () {
 	X <- matrix(c(0.5498018, 1.3497705, 0.1617772, -0.9073028, 0.9164897, 1.7140090, -0.1020368, -0.4579487), nrow = n * K, ncol = p)
 	y <- c(4.3328193, 2.0634363, -1.2631156, 0.7304365)
 	tasks <- rep(LETTERS[1:K], each = n)
-
+	lambda <- 40	
+	
 	#estimate parameters
 
-	out <- multitask(X, y, tasks, groups)
+	out <- multitask(X, y, tasks, groups, lambda)
 
 	print(out)
 }
