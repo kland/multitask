@@ -1,14 +1,14 @@
 #include <Rcpp.h>
 #include "multitask.h"
 
-SEXP multitask(SEXP Xsexp)
+SEXP multitask(SEXP X0, SEXP y0, SEXP tasks0, SEXP groups0)
 {
-	Rcpp::NumericMatrix X(Xsexp);
-	std::cout << X[0] << std::endl;
+	/*convert SEXP parameters to Rcpp types*/
+	Rcpp::NumericMatrix X(X0);
+	Rcpp::NumericVector y(y0);
+	Rcpp::CharacterVector tasks(tasks0);
+	Rcpp::NumericMatrix groups(groups0);
+	Rcpp::NumericMatrix result(X0);
 	
-	Rcpp::CharacterVector x = Rcpp::CharacterVector::create("foo", "bar");
-	Rcpp::NumericVector y = Rcpp::NumericVector::create(0.0, 1.0);
-	Rcpp::List z = Rcpp::List::create(x, y);
-
-	return z ;
+	return result;
 }
