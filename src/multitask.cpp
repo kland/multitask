@@ -38,7 +38,7 @@ SEXP multitask(SEXP X0, SEXP y0, SEXP tasks0, SEXP groups0)
 	int maxIter = 100;
 	int verbose = 1;
 
-	//solveLasso(&data, lambda, regpathLength, threshold, maxIter, verbose);
+	solveLasso(&data, lambda, regpathLength, threshold, maxIter, verbose);
 	
 	return result;
 }
