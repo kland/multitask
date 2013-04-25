@@ -3,6 +3,6 @@
 
 #include <Rcpp.h>
 
-RcppExport SEXP multitask(SEXP X, SEXP y, SEXP tasks, SEXP groups, SEXP lambda, SEXP eps);
+RcppExport SEXP multitask_lasso(SEXP X, SEXP y, SEXP tasks, SEXP groups, SEXP lambda, SEXP eps);
 
 #endif

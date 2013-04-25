@@ -1,4 +1,4 @@
-multitask <- function (X, y, tasks, groups, lambda, eps = 1e-12) {
-	.Call("multitask", X, y, tasks, groups, lambda, eps, PACKAGE = "multitask")
+lasso <- function (X, y, tasks, groups, lambda, eps = 1e-12) {
+	.Call("multitask_lasso", X, y, tasks, groups, lambda, eps, PACKAGE = "multitask")
 }
 

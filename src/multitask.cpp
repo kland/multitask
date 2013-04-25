@@ -2,7 +2,7 @@
 #include "shotgun/common.h"
 #include "multitask.h"
 
-SEXP multitask(SEXP X0, SEXP y0, SEXP tasks0, SEXP groups0, SEXP lambda0, SEXP eps0)
+SEXP multitask_lasso(SEXP X0, SEXP y0, SEXP tasks0, SEXP groups0, SEXP lambda0, SEXP eps0)
 {
 	//convert parameters to Rcpp types
 	Rcpp::NumericMatrix A(X0); //using name A to be consistent with Shotgun library
