@@ -1,4 +1,4 @@
-multitask <- function () {
-	.Call("multitask", PACKAGE = "multitask")
+multitask <- function (X) {
+	.Call("multitask", X, PACKAGE = "multitask")
 }
 

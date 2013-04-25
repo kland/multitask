@@ -3,6 +3,6 @@
 
 #include <Rcpp.h>
 
-RcppExport SEXP multitask();
+RcppExport SEXP multitask(SEXP X);
 
 #endif
