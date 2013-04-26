@@ -9,7 +9,6 @@ SEXP multitask_lasso(SEXP X0, SEXP y0, SEXP lambda0, SEXP eps0)
 	Rcpp::NumericVector y(y0);
 	Rcpp::NumericVector lambda(lambda0); //one-element vector
 	Rcpp::NumericVector eps(eps0); //one-element vector
-	Rcpp::NumericMatrix result(X0);
 	
 	shotgun_data data;
 
@@ -34,9 +33,9 @@ SEXP multitask_lasso(SEXP X0, SEXP y0, SEXP lambda0, SEXP eps0)
 
 	int regpathLength = 0;
 	int maxIter = 100;
-	int verbose = 1;
+	int verbose = 0;
 
 	solveLasso(&data, lambda[0], regpathLength, eps[0], maxIter, verbose);
 	
-	return result;
+	return Rcpp::wrap(data.x);
 }
