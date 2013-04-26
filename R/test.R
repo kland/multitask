@@ -19,7 +19,7 @@ test <- function () {
 	
 	#estimate parameters
 
-	out <- lasso(X, y, tasks, groups, lambda)
+	out <- multitask(X, y, tasks, groups, lambda)
 
 	print(out)
 }
