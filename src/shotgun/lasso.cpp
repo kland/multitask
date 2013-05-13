@@ -135,7 +135,7 @@ void main_optimization_loop(double lambda, int regpathlength, double threshold, 
     // Empirically found heuristic for deciding how malassoprob->ny steps
     // to take on the regularization path
     int regularization_path_length = (regpathlength <= 0 ? 1+(int)(lassoprob->nx/2000) : regpathlength);
-    mexPrintf("regularization_path_length = %d\n",regularization_path_length);
+    //mexPrintf("regularization_path_length = %d\n",regularization_path_length);
 
     valuetype_t lambda_max = compute_max_lambda();
     valuetype_t lambda_min = lambda;
@@ -183,7 +183,7 @@ void main_optimization_loop(double lambda, int regpathlength, double threshold, 
         }
     } while (regularization_path_step >= 0);
     delete[] delta;
-    mexPrintf("Num of shoots = %lld\n", num_of_shoots);
+    //mexPrintf("Num of shoots = %lld\n", num_of_shoots);
 }
 
 
