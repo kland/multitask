@@ -89,10 +89,8 @@ multitask.linear<-function(X,y,tasks,groups,lambda,eps=1e-12){
       # this is the call to the Lasso solver
       alpha.fit<-penalized(y[tasks==task],Xtilde,unpenalized = ~0,lambda1=lambda,standardize=F,trace=F)
       alpha.new[,k]<-coef(alpha.fit,"all")
-      ##the two lines below compare the result from penalized and shotgun
-      #print("penalized"); print(alpha.new[,k])
-      #print("shotgun"); print(lasso(Xtilde, y[tasks==task], lambda))
-      #stop()
+      #TODO: Find out why result from shotgun lasso and penalized differ and why using shotgun lasso make all estimations zero (despite increasing the maximum number of iterations)
+      #alpha.new[,k] <- lasso(Xtilde, y[tasks==task], lambda)
     }
 
 #    # alternative, expanded matrix
