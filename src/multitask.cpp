@@ -2,6 +2,12 @@
 #include "shotgun/common.h"
 #include "multitask.h"
 
+SEXP multitask_x_tilde(SEXP X, SEXP tasks, SEXP groups, SEXP d_cur, SEXP eta_cur, SEXP task_index)
+{
+	return R_NilValue;
+}
+
+
 SEXP multitask_lasso(SEXP X0, SEXP y0, SEXP lambda0, SEXP eps0)
 {
 	//convert parameters to Rcpp types

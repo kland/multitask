@@ -2,6 +2,11 @@ lasso <- function (X, y, lambda, eps = 1e-12) {
 	.Call("multitask_lasso", X, y, lambda, eps, PACKAGE = "multitask")
 }
 
+x.tilde <- function (X, tasks, groups, d.cur, eta.cur, task.index) {
+	.Call("multitask_x_tilde", X, tasks, groups, d.cur, eta.cur, task.index, PACKAGE = "multitask")
+}
+
+
 #solving the garotte problem 
 solveGarotte.linear<-function(y,X,lambda=1,eps=1e-12){
   require(quadprog)
@@ -86,10 +91,11 @@ multitask.linear<-function(X,y,tasks,groups,lambda,eps=1e-12){
       task<-levels(tasks)[k]
       # this matrix is of size n x p. Corresponds to equation I (extra notation in paper).
       Xtilde<-X[tasks==task,] %*% diag(apply(groups %*% diag(d.cur * eta.cur[,k]),1,sum))
+      #Xtilde <- x.tilde(X, tasks, groups, d.cur, eta.cur, k)
       # this is the call to the Lasso solver
       alpha.fit<-penalized(y[tasks==task],Xtilde,unpenalized = ~0,lambda1=lambda,standardize=F,trace=F)
       alpha.new[,k]<-coef(alpha.fit,"all")
-      #TODO: Find out why result from shotgun lasso and penalized differ and why using shotgun lasso make all estimations zero (despite increasing the maximum number of iterations)
+      #TODO: Find out why result from shotgun lasso and penalized differ and why using shotgun lasso makes all estimations zero (despite increasing the maximum number of iterations)
       #alpha.new[,k] <- lasso(Xtilde, y[tasks==task], lambda)
     }
 
