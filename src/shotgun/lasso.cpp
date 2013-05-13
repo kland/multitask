@@ -150,7 +150,7 @@ void main_optimization_loop(double lambda, int regpathlength, double threshold, 
     do {
         ++iterations;
         if (iterations >= maxiter && maxiter > 0) {
-            mexPrintf("Exceeded max iterations: %d", maxiter);
+            mexPrintf("Exceeded max iterations: %d\n", maxiter);
             return;
         }
         double maxChange=0;
