@@ -9,7 +9,9 @@ SEXP multitask_x_tilde(SEXP X0, SEXP tasks0, SEXP groups0, SEXP d_cur0, SEXP eta
 	Rcpp::NumericMatrix groups(groups0);
 	Rcpp::NumericVector d_cur(d_cur0);
 	Rcpp::NumericMatrix eta_cur(eta_cur0);
-	Rcpp::NumericVector task_index(task_index0); //one-element vector
+	Rcpp::IntegerVector task_index(task_index0); //one-element vector
+	
+	std::cout << task_index[0] << std::endl;
 	
 	return R_NilValue;
 }
