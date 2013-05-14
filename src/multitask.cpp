@@ -2,8 +2,15 @@
 #include "shotgun/common.h"
 #include "multitask.h"
 
-SEXP multitask_x_tilde(SEXP X, SEXP tasks, SEXP groups, SEXP d_cur, SEXP eta_cur, SEXP task_index)
+SEXP multitask_x_tilde(SEXP X0, SEXP tasks0, SEXP groups0, SEXP d_cur0, SEXP eta_cur0, SEXP task_index0)
 {
+	Rcpp::NumericMatrix X(X0);
+	Rcpp::NumericVector tasks(tasks0);
+	Rcpp::NumericMatrix groups(groups0);
+	Rcpp::NumericVector d_cur(d_cur0);
+	Rcpp::NumericMatrix eta_cur(eta_cur0);
+	Rcpp::NumericVector task_index(task_index0); //one-element vector
+	
 	return R_NilValue;
 }
 
