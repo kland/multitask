@@ -2,18 +2,45 @@
 #include "shotgun/common.h"
 #include "multitask.h"
 
-SEXP multitask_x_tilde(SEXP X0, SEXP tasks0, SEXP groups0, SEXP d_cur0, SEXP eta_cur0, SEXP task_index0)
+static int index(int i, int j, int m) //returns column-major order index for element at position (i, j) in a matrix with m rows
 {
+	return m * j + i;
+}
+
+
+SEXP multitask_x_tilde(SEXP X0, SEXP tasks0, SEXP groups0, SEXP d_cur0, SEXP eta_cur0, SEXP K0, SEXP k0)
+{
+	//convert input parameters to Rcpp types or primitive C++ types
 	Rcpp::NumericMatrix X(X0);
-	Rcpp::NumericVector tasks(tasks0);
-	Rcpp::NumericMatrix groups(groups0);
+	Rcpp::CharacterVector tasks(tasks0);
+	Rcpp::IntegerMatrix groups(groups0);
 	Rcpp::NumericVector d_cur(d_cur0);
 	Rcpp::NumericMatrix eta_cur(eta_cur0);
-	Rcpp::IntegerVector task_index(task_index0); //one-element vector
+	int K = Rcpp::as<int>(K0);
+	assert(K > 0);
+	int k = Rcpp::as<int>(k0) - 1; //C++ arrays are zero-based
+	assert(k >= 0);
 	
-	std::cout << task_index[0] << std::endl;
+	int n = X.nrow() / K;
+	int p = X.ncol();
+	int L = groups.ncol();
+	Rcpp::NumericMatrix result(n, p);
 	
-	return R_NilValue;
+	for (int j = 0; j < p; j++) {
+		//calculate sum for column j
+		double sum = 0.0;
+		for (int l = 0; l < L; l++) {
+			if (groups[index(j, l, p)]) {
+				sum += d_cur[l] * eta_cur[index(l, k, L)];
+			}
+		}
+		
+		//multiply column j in submatrix k of X with sum
+		for (int i = 0; i < n; i++) {
+			result[index(i, j, n)] = X[index(n * k + i, j, n * K)] * sum;
+		}
+	}
+	return result;
 }
 
 

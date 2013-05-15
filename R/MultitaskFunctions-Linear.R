@@ -2,8 +2,8 @@ lasso <- function (X, y, lambda, eps = 1e-12) {
 	.Call("multitask_lasso", X, y, lambda, eps, PACKAGE = "multitask")
 }
 
-x.tilde <- function (X, tasks, groups, d.cur, eta.cur, task.index) {
-	.Call("multitask_x_tilde", X, tasks, groups, d.cur, eta.cur, task.index, PACKAGE = "multitask")
+x.tilde <- function (X, tasks, groups, d.cur, eta.cur, K, k) {
+	.Call("multitask_x_tilde", X, tasks, groups, d.cur, eta.cur, K, k, PACKAGE = "multitask")
 }
 
 
@@ -90,8 +90,8 @@ multitask.linear<-function(X,y,tasks,groups,lambda,eps=1e-12){
     for(k in 1:K){
       task<-levels(tasks)[k]
       # this matrix is of size n x p. Corresponds to equation I (extra notation in paper).
-      Xtilde<-X[tasks==task,] %*% diag(apply(groups %*% diag(d.cur * eta.cur[,k]),1,sum))
-      #Xtilde <- x.tilde(X, tasks, groups, d.cur, eta.cur, k)
+      #Xtilde<-X[tasks==task,] %*% diag(apply(groups %*% diag(d.cur * eta.cur[,k]),1,sum))
+      Xtilde <- x.tilde(X, tasks, groups, d.cur, eta.cur, K, k)
       # this is the call to the Lasso solver
       alpha.fit<-penalized(y[tasks==task],Xtilde,unpenalized = ~0,lambda1=lambda,standardize=F,trace=F)
       alpha.new[,k]<-coef(alpha.fit,"all")
