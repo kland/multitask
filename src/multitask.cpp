@@ -61,8 +61,8 @@ SEXP multitask_lasso(SEXP X0, SEXP y0, SEXP lambda0, SEXP eps0)
 	data.A_rows.resize(M);
 	for (int k = 0; k < M * N; k++) {
 		if (X[k] != 0.0) {
-			int i = k / N; //row
-			int j = k % N; //column
+			int i = k % M; //row (R uses column-major order)
+			int j = k / M; //column
 			data.A_cols.at(j).add(i, X[k]);
 			data.A_rows.at(i).add(j, X[k]);
 		}
