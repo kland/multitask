@@ -106,8 +106,12 @@ multitask.linear<-function(X,y,tasks,groups,lambda,eps=1e-12){
 #      Xtilde[[k]]<-(X[tasks==task,] %*% diag(apply(groups %*% diag(d.cur * eta.cur[,k]),1,sum)))
 #    }
 #    Xtilde <- as.matrix(bdiag(Xtilde))
-#    alpha.fit<-penalized(y,Xtilde,unpenalized = ~0,lambda1=lambda,standardize=F,trace=F)
- 		
+#    #penalized
+#    #alpha.fit<-penalized(y,Xtilde,unpenalized = ~0,lambda1=lambda,standardize=F,trace=F)
+#    #alpha.new <- matrix(coef(alpha.fit, "all"), nrow = p, ncol = K)
+#    #shotgun lasso
+#    alpha.new <- matrix(lasso(Xtilde, y, lambda), nrow = p, ncol = K)
+    
     # 2. update d
     # Xtilde2 is of size K*n x L after this loop. Corresponds to equation II (extra notation in paper).
     Xtilde2 <- NULL
