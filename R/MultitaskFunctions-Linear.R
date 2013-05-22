@@ -120,7 +120,7 @@ multitask.linear<-function(X,y,tasks,groups,lambda,eps=1e-12){
        Xtilde2<-rbind(Xtilde2,((X[tasks==task,] %*% diag(alpha.new[,k])) %*% groups) %*% diag(eta.cur[,k]))
     }
     # this is the call to the quadprog solver
-    d.new<-solveGarotte.linear(y,Xtilde2)
+    d.new<-sign(solveGarotte.linear(y,Xtilde2))
  		
     # 3. update eta
     eta.new<-matrix(NA,nrow=L,ncol=K)
