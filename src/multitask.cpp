@@ -2,7 +2,7 @@
 #include "shotgun/common.h"
 #include "multitask.h"
 
-static int index(int i, int j, int m) //returns column-major order index for element at position (i, j) in a matrix with m rows
+static inline int index(int i, int j, int m) //returns column-major order index for element at position (i, j) in a matrix with m rows
 {
 	return m * j + i;
 }
@@ -40,6 +40,45 @@ SEXP multitask_x_tilde(SEXP X0, SEXP tasks0, SEXP groups0, SEXP d_cur0, SEXP eta
 			result[index(i, j, n)] = X[index(n * k + i, j, n * K)] * sum;
 		}
 	}
+	return result;
+}
+
+
+static inline double &elem(Rcpp::NumericMatrix &A, int i, int j) //returns element at position (i, j) in column-major order matrix A
+{
+	return A[A.nrow() * j + i];
+}
+
+
+SEXP multitask_x_tilde_2(SEXP X0, SEXP tasks0, SEXP groups0, SEXP alpha_new0, SEXP eta_cur0, SEXP K0)
+{
+	//convert input parameters to Rcpp types or primitive C++ types
+	Rcpp::NumericMatrix X(X0);
+	Rcpp::CharacterVector tasks(tasks0);
+	Rcpp::IntegerMatrix groups(groups0);
+	Rcpp::NumericMatrix alpha_new(alpha_new0);
+	Rcpp::NumericMatrix eta_cur(eta_cur0);
+	int K = Rcpp::as<int>(K0);
+	assert(K > 0);
+	
+	int n = X.nrow() / K;
+	int p = X.ncol();
+	int L = groups.ncol();
+	Rcpp::NumericMatrix result(X.nrow(), L);
+
+	for (int l = 0; l < L; l++) {
+		for (int i = 0; i < n * K; i++) {
+			int k = i / n;
+			double sum = 0.0;
+			for (int j = 0; j < p; j++) {
+				if (groups[index(j, l, p)]) {
+					sum += elem(X, i, j) * elem(alpha_new, j, k);
+				}
+			}
+			elem(result, i, l) = elem(eta_cur, l, k) * sum;
+		}
+	}
+
 	return result;
 }
 

@@ -6,6 +6,9 @@ x.tilde <- function (X, tasks, groups, d.cur, eta.cur, K, k) {
 	.Call("multitask_x_tilde", X, tasks, groups, d.cur, eta.cur, K, k, PACKAGE = "multitask")
 }
 
+x.tilde.2 <- function (X, tasks, groups, alpha.new, eta.cur, K) {
+	.Call("multitask_x_tilde_2", X, tasks, groups, alpha.new, eta.cur, K, PACKAGE = "multitask")
+}
 
 #solving the garotte problem 
 solveGarotte.linear<-function(y,X,lambda=1,eps=1e-12){
@@ -114,11 +117,12 @@ multitask.linear<-function(X,y,tasks,groups,lambda,eps=1e-12){
     
     # 2. update d
     # Xtilde2 is of size K*n x L after this loop. Corresponds to equation II (extra notation in paper).
-    Xtilde2 <- NULL
-    for(k in 1:K){
-      task<-levels(tasks)[k]
-       Xtilde2<-rbind(Xtilde2,((X[tasks==task,] %*% diag(alpha.new[,k])) %*% groups) %*% diag(eta.cur[,k]))
-    }
+    #Xtilde2 <- NULL
+    #for(k in 1:K){
+    #  task<-levels(tasks)[k]
+    #  Xtilde2<-rbind(Xtilde2,((X[tasks==task,] %*% diag(alpha.new[,k])) %*% groups) %*% diag(eta.cur[,k]))
+    #}
+    Xtilde2 <- x.tilde.2(X, tasks, groups, alpha.new, eta.cur, K)
     # this is the call to the quadprog solver
     d.new<-sign(solveGarotte.linear(y,Xtilde2))
  		
