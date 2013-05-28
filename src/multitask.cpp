@@ -2,9 +2,15 @@
 #include "shotgun/common.h"
 #include "multitask.h"
 
-static inline int index(int i, int j, int m) //returns column-major order index for element at position (i, j) in a matrix with m rows
+static inline int &elem(Rcpp::IntegerMatrix &A, int i, int j) //returns element at position (i, j) in column-major order matrix A
 {
-	return m * j + i;
+	return A[A.nrow() * j + i];
+}
+
+
+static inline double &elem(Rcpp::NumericMatrix &A, int i, int j) //returns element at position (i, j) in column-major order matrix A
+{
+	return A[A.nrow() * j + i];
 }
 
 
@@ -30,23 +36,17 @@ SEXP multitask_x_tilde(SEXP X0, SEXP tasks0, SEXP groups0, SEXP d_cur0, SEXP eta
 		//calculate sum for column j
 		double sum = 0.0;
 		for (int l = 0; l < L; l++) {
-			if (groups[index(j, l, p)]) {
-				sum += d_cur[l] * eta_cur[index(l, k, L)];
+			if (elem(groups, j, l)) {
+				sum += d_cur[l] * elem(eta_cur, l, k);
 			}
 		}
 		
 		//multiply column j in submatrix k of X with sum
 		for (int i = 0; i < n; i++) {
-			result[index(i, j, n)] = X[index(n * k + i, j, n * K)] * sum;
+			elem(result, i, j) = elem(X, n * k + i, j) * sum;
 		}
 	}
 	return result;
-}
-
-
-static inline double &elem(Rcpp::NumericMatrix &A, int i, int j) //returns element at position (i, j) in column-major order matrix A
-{
-	return A[A.nrow() * j + i];
 }
 
 
@@ -71,7 +71,7 @@ SEXP multitask_x_tilde_2(SEXP X0, SEXP tasks0, SEXP groups0, SEXP alpha_new0, SE
 			int k = i / n;
 			double sum = 0.0;
 			for (int j = 0; j < p; j++) {
-				if (groups[index(j, l, p)]) {
+				if (elem(groups, j, l)) {
 					sum += elem(X, i, j) * elem(alpha_new, j, k);
 				}
 			}
