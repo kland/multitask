@@ -10,6 +10,10 @@ x.tilde.2 <- function (X, tasks, groups, alpha.new, eta.cur, K) {
 	.Call("multitask_x_tilde_2", X, tasks, groups, alpha.new, eta.cur, K, PACKAGE = "multitask")
 }
 
+x.tilde.3 <- function (X, tasks, groups, alpha.new, d.new, K, k) {
+	.Call("multitask_x_tilde_3", X, tasks, groups, alpha.new, d.new, K, k, PACKAGE = "multitask")
+}
+
 #solving the garotte problem 
 solveGarotte.linear<-function(y,X,lambda=1,eps=1e-12){
   require(quadprog)
@@ -131,7 +135,8 @@ multitask.linear<-function(X,y,tasks,groups,lambda,eps=1e-12){
     for(k in 1:K){
       task<-levels(tasks)[k]
       # this matrix is of size n x L. Corresponds to equation III (extra notation in paper).
-      Xtilde3<-((X[tasks==task,] %*% diag(alpha.new[,k])) %*% groups) %*% diag(d.new)
+      #Xtilde3<-((X[tasks==task,] %*% diag(alpha.new[,k])) %*% groups) %*% diag(d.new)
+      Xtilde3 <- x.tilde.3(X, tasks, groups, alpha.new, d.new, K, k)
       eta.new[,k]<-solveGarotte.linear(y[tasks==task],Xtilde3)
     }
  
