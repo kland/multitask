@@ -117,6 +117,35 @@ SEXP multitask_x_tilde_3(SEXP X0, SEXP tasks0, SEXP groups0, SEXP alpha_new0, SE
 }
 
 
+SEXP multitask_beta_new(SEXP groups0, SEXP alpha_new0, SEXP d_new0, SEXP eta_new0, SEXP K0)
+{
+	//convert input parameters to Rcpp types or primitive C++ types
+	Rcpp::IntegerMatrix groups(groups0);
+	Rcpp::NumericMatrix alpha_new(alpha_new0);
+	Rcpp::NumericVector d_new(d_new0);
+	Rcpp::NumericMatrix eta_new(eta_new0);
+	int K = Rcpp::as<int>(K0);
+	assert(K > 0);
+	
+	int p = groups.nrow();
+	int L = groups.ncol();
+	Rcpp::NumericMatrix result(p, K);
+	
+	for (int k = 0; k < K; k++) {
+		for (int j = 0; j < p; j++) {
+			double sum = 0.0;
+			for (int l = 0; l < L; l++) {
+				if (elem(groups, j, l)) {
+					sum += d_new[l] * elem(eta_new, l, k);
+				}
+			}					
+			elem(result, j, k) = elem(alpha_new, j, k) * sum;
+		}
+	}
+	return result;
+}
+
+
 SEXP multitask_lasso(SEXP X0, SEXP y0, SEXP lambda0, SEXP eps0)
 {
 	//convert parameters to Rcpp types

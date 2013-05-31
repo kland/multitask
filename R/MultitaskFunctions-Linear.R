@@ -14,6 +14,10 @@ x.tilde.3 <- function (X, tasks, groups, alpha.new, d.new, K, k) {
 	.Call("multitask_x_tilde_3", X, tasks, groups, alpha.new, d.new, K, k, PACKAGE = "multitask")
 }
 
+Beta.new <- function (groups, alpha.new, d.new, eta.new, K) {
+	.Call("multitask_beta_new", groups, alpha.new, d.new, eta.new, K, PACKAGE = "multitask")
+}
+
 #solving the garotte problem 
 solveGarotte.linear<-function(y,X,lambda=1,eps=1e-12){
   require(quadprog)
@@ -141,7 +145,8 @@ multitask.linear<-function(X,y,tasks,groups,lambda,eps=1e-12){
     }
  
     # 4. update beta
-    beta.new <- alpha.new * (groups %*% (diag(d.new) %*% eta.new))
+    #beta.new <- alpha.new * (groups %*% (diag(d.new) %*% eta.new))
+    beta.new <- Beta.new(groups, alpha.new, d.new, eta.new, K)
     
     # check convergence
     if (max(abs(beta.new - beta.cur))<eps){
