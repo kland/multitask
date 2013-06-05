@@ -4,7 +4,7 @@
 #include <Rcpp.h>
 
 RcppExport
-SEXP multitask_x_tilde(SEXP X, SEXP tasks, SEXP groups, SEXP d_cur, SEXP eta_cur, SEXP K, SEXP k);
+SEXP multitask_x_tilde(SEXP X, SEXP tasks, SEXP groups, SEXP d_cur, SEXP eta_cur, SEXP K);
 
 RcppExport
 SEXP multitask_x_tilde_2(SEXP X, SEXP tasks, SEXP groups, SEXP alpha_new, SEXP eta_cur, SEXP K);

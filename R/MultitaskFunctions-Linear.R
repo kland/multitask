@@ -2,8 +2,8 @@ lasso <- function (X, y, lambda, eps = 1e-12) {
 	.Call("multitask_lasso", X, y, lambda, eps, PACKAGE = "multitask")
 }
 
-x.tilde <- function (X, tasks, groups, d.cur, eta.cur, K, k) {
-	.Call("multitask_x_tilde", X, tasks, groups, d.cur, eta.cur, K, k, PACKAGE = "multitask")
+x.tilde <- function (X, tasks, groups, d.cur, eta.cur, K) {
+	.Call("multitask_x_tilde", X, tasks, groups, d.cur, eta.cur, K, PACKAGE = "multitask")
 }
 
 x.tilde.2 <- function (X, tasks, groups, alpha.new, eta.cur, K) {
@@ -97,31 +97,32 @@ multitask.linear<-function(X,y,tasks,groups,lambda,eps=1e-12){
   converged<-FALSE
   while(!converged){
     # 1. update alpha
-    alpha.new<-matrix(NA,nrow=p,ncol=K)
-    for(k in 1:K){
-      task<-levels(tasks)[k]
-      # this matrix is of size n x p. Corresponds to equation I (extra notation in paper).
-      #Xtilde<-X[tasks==task,] %*% diag(apply(groups %*% diag(d.cur * eta.cur[,k]),1,sum))
-      Xtilde <- x.tilde(X, tasks, groups, d.cur, eta.cur, K, k)
-      # this is the call to the Lasso solver
-      #alpha.fit<-penalized(y[tasks==task],Xtilde,unpenalized = ~0,lambda1=lambda,standardize=F,trace=F)
-      #alpha.new[,k]<-coef(alpha.fit,"all")
-      #TODO: Find out why result from shotgun lasso and penalized differ
-      alpha.new[,k] <- lasso(Xtilde, y[tasks==task], lambda)
-    }
-
-#    # alternative, expanded matrix
-#    Xtilde <- list()
+#    alpha.new<-matrix(NA,nrow=p,ncol=K)
 #    for(k in 1:K){
 #      task<-levels(tasks)[k]
-#      Xtilde[[k]]<-(X[tasks==task,] %*% diag(apply(groups %*% diag(d.cur * eta.cur[,k]),1,sum)))
+#      # this matrix is of size n x p. Corresponds to equation I (extra notation in paper).
+#      #Xtilde<-X[tasks==task,] %*% diag(apply(groups %*% diag(d.cur * eta.cur[,k]),1,sum))
+#      Xtilde <- x.tilde(X, tasks, groups, d.cur, eta.cur, K, k)
+#      # this is the call to the Lasso solver
+#      #alpha.fit<-penalized(y[tasks==task],Xtilde,unpenalized = ~0,lambda1=lambda,standardize=F,trace=F)
+#      #alpha.new[,k]<-coef(alpha.fit,"all")
+#      #TODO: Find out why result from shotgun lasso and penalized differ
+#      alpha.new[,k] <- lasso(Xtilde, y[tasks==task], lambda)
 #    }
-#    Xtilde <- as.matrix(bdiag(Xtilde))
-#    #penalized
-#    #alpha.fit<-penalized(y,Xtilde,unpenalized = ~0,lambda1=lambda,standardize=F,trace=F)
-#    #alpha.new <- matrix(coef(alpha.fit, "all"), nrow = p, ncol = K)
-#    #shotgun lasso
-#    alpha.new <- matrix(lasso(Xtilde, y, lambda), nrow = p, ncol = K)
+
+    # alternative, expanded matrix
+    #Xtilde <- list()
+    #for(k in 1:K){
+    #  task<-levels(tasks)[k]
+    # Xtilde[[k]]<-(X[tasks==task,] %*% diag(apply(groups %*% diag(d.cur * eta.cur[,k]),1,sum)))
+    #}
+    #Xtilde <- as.matrix(bdiag(Xtilde))
+    Xtilde <- x.tilde(X, tasks, groups, d.cur, eta.cur, K)
+    #penalized
+    #alpha.fit<-penalized(y,Xtilde,unpenalized = ~0,lambda1=lambda,standardize=F,trace=F)
+    #alpha.new <- matrix(coef(alpha.fit, "all"), nrow = p, ncol = K)
+    #shotgun lasso
+    alpha.new <- matrix(lasso(Xtilde, y, lambda), nrow = p, ncol = K)
     
     # 2. update d
     # Xtilde2 is of size K*n x L after this loop. Corresponds to equation II (extra notation in paper).
