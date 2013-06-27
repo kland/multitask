@@ -44,13 +44,15 @@ SEXP multitask_x_tilde(SEXP X0, SEXP tasks0, SEXP groups0, SEXP d_cur0, SEXP eta
 }
 
 
-SEXP multitask_lasso(SEXP X0, SEXP y0, SEXP lambda0, SEXP eps0)
+SEXP multitask_lasso(SEXP X0, SEXP y0, SEXP lambda0, SEXP model0, SEXP positive0, SEXP eps0)
 {
 	//convert parameters to Rcpp types
 	Rcpp::NumericMatrix X(X0);
 	Rcpp::NumericVector y(y0);
 	double lambda = Rcpp::as<double>(lambda0);
 	double eps = Rcpp::as<double>(eps0);
+	int model = Rcpp::as<int>(model0);
+	int positive = Rcpp::as<int>(positive0);
 	
 	shotgun_data data; //input to and output from function solveLasso
 
@@ -74,8 +76,52 @@ SEXP multitask_lasso(SEXP X0, SEXP y0, SEXP lambda0, SEXP eps0)
 	int regpathLength = 0;
 	int maxIter = 100;
 	int verbose = 0;
-
-	solveLasso(&data, lambda, regpathLength, eps, maxIter, verbose);
+	bool all_zero = false;
+	
+	if (model == 1) {
+		solveLasso(&data, lambda, positive, regpathLength, eps, maxIter, verbose);
+	} else if (model == 2) {
+		compute_logreg(&data, lambda, positive, eps, maxIter, verbose, all_zero);
+	}else{
+		fprintf(stderr, "Unknown method\n");
+	}
 	
 	return Rcpp::wrap(data.x);
 }
+
+/*SEXP multitask_lasso2(SEXP X0, SEXP y0, SEXP lambda0, SEXP eps0)
+{
+		//convert parameters to Rcpp types
+	Rcpp::NumericMatrix X(X0);
+	Rcpp::NumericVector y(y0);
+	double lambda = Rcpp::as<double>(lambda0);
+	double eps = Rcpp::as<double>(eps0);
+	
+	shotgun_data data; //input to and output from function compute_logreg
+	
+		//initialize input fields (shotgun calls the design matrix A instead of X)
+	int M = X.nrow();
+	int N = X.ncol();
+	data.A_cols.resize(N);
+	data.A_rows.resize(M);
+	for (int k = 0; k < M * N; k++) {
+		if (X[k] != 0.0) {
+			int i = k % M; //row (R uses column-major order)
+			int j = k / M; //column
+			data.A_cols.at(j).add(i, X[k]);
+			data.A_rows.at(i).add(j, X[k]);
+		}
+	}
+	data.y = Rcpp::as< std::vector<valuetype_t> >(y);
+	data.nx = N;
+	data.ny = M;
+	
+	int maxIter = 100;
+	int verbose = 0;
+	bool all_zero = false;
+	
+	compute_logreg(&data, lambda, eps, maxIter, verbose, all_zero);
+	
+	return Rcpp::wrap(data.x);
+}*/
+

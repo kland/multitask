@@ -5,6 +5,8 @@
 
 RcppExport SEXP multitask_x_tilde(SEXP X, SEXP tasks, SEXP groups, SEXP d_cur, SEXP eta_cur, SEXP K, SEXP k);
 
-RcppExport SEXP multitask_lasso(SEXP X, SEXP y, SEXP lambda, SEXP eps);
+RcppExport SEXP multitask_lasso(SEXP X, SEXP y, SEXP lambda, SEXP model, SEXP positive, SEXP eps);
+
+
 
 #endif

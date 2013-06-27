@@ -26,6 +26,8 @@
 // modified by Danny Bickson, CMU 
  
 #include "common.h"
+#include <stdio.h>      /* printf */
+#include <cmath>       /* isnan, sqrt */
 
 
 shotgun_data * logregprob;
@@ -57,7 +59,7 @@ inline void swap(int &t1, int &t2) { int tmp=t2; t2=t1; t1=tmp; }
 
 // Computes L_j'(0) and L_j''
 // See: Yuan, Chang et al. : 
-//  A Comparison of Optimization Methods and Software for Large-scale L1-regularized Linear Classification
+//  3
 //  equation (25)
 inline void logreg_cdn_derivandH(double lambda, int x_i, double &G, double& H) {
     G = H = 0;
@@ -100,7 +102,7 @@ inline double logreg_cdn_Ldiff(double lambda, int x_i, double diff) {
        //assert(!isnan(ds));
        sum +=  ds;
     } 
-    if (isnan(sum)){
+    if (std::isnan(sum)){
         fprintf(stderr, "Got numerical error: please verify that in your dataset there are no columns of matrix A with all zeros. Encountered error in column %d\n", x_i);
         exit(1);
     }
@@ -159,7 +161,7 @@ void recompute_expAx() {
  
  
 // Yua, Chang, Hsieh and Lin: A Comparison of Optimization Methods and Software for Large-scale L1-regularized Linear Classification; p. 14
-double shoot_cdn(int x_i, double lambda) {
+double shoot_cdn(int x_i, double lambda, int positive) {
     // Compute d: (equation 29), i.e the solution to the quadratic approximation of the function 
     // for weight x_i
     if (!active[x_i]) return 0.0;
@@ -200,7 +202,11 @@ double shoot_cdn(int x_i, double lambda) {
     if (Gp<= rhs) {
         d = -(Gp/Ldd0);
     } else if (Gn >= rhs) {
-        d = -(Gn/Ldd0); 
+		if (positive == 1) {
+			d = -xv;
+		}else{
+			d = -(Gn/Ldd0);  
+		}
     } else {
         d = -xv;
     }
@@ -219,7 +225,7 @@ double shoot_cdn(int x_i, double lambda) {
     double rhs_c = cdn_sigma * delta;    
     do {
         double change_in_obj = g_xi(d, x_i, lambda);
-        if (change_in_obj <= gamma * rhs_c) {
+        if (change_in_obj <= gamma * rhs_c) { 
             // Found ok.
             logregprob->x[x_i] += d;
             // Update dot products (Ax)
@@ -244,12 +250,24 @@ double shoot_cdn(int x_i, double lambda) {
  
 /** 
   * Execute "shoot" update of a feature.
-  */
-void shoot_logreg(int x_i, double lambda) {
+ 
+void shoot_logreg(int x_i, double lambda, int positive) {
     // Some columns may be empty:
     if (logregprob->A_cols[x_i].length() == 0) return;
-    shoot_cdn(x_i, lambda);
+    shoot_cdn(x_i, lambda, positive);
+}*/
+
+
+/** 
+ * Execute "shoot" update of a feature.
+ */
+double shoot_logreg(int x_i, double lambda, int positive) {
+		// Some columns may be empty:
+    if (logregprob->A_cols[x_i].length() == 0) return 0.0;
+    return shoot_cdn(x_i, lambda, positive);
 }
+
+
 
 
 /**
@@ -260,7 +278,7 @@ void shoot_logreg(int x_i, double lambda) {
   * has little effect. Also, it does not need to have a atomic array for maintaining Ax.
   * For the experiments in the paper, a special sequential code was used for fairness.
   */
-void compute_logreg(shotgun_data * prob, double lambda, double term_threshold, int max_iter, int verbose, bool & all_zero) {
+void compute_logreg(shotgun_data * prob, double lambda, int positive, double term_threshold, int max_iter, int verbose, bool & all_zero) {
     all_zero = false;
     logregprob = prob;
     //double l1x, loglikelihood;
@@ -288,9 +306,12 @@ void compute_logreg(shotgun_data * prob, double lambda, double term_threshold, i
             
             /* Main parallel loop */
         #pragma omp parallel for
+		double maxChange = 0.0;
         for(int s=0; s<active_size; s++) {
             int x_i = shuffled_indices[s];
-            shoot_logreg(x_i, lambda);
+            double dd = shoot_logreg(x_i, lambda, positive);
+			maxChange = (maxChange < dd ? dd : maxChange);
+			
         }
             
         /* Gmax handling */
@@ -301,11 +322,15 @@ void compute_logreg(shotgun_data * prob, double lambda, double term_threshold, i
         
         iterations++;
         
-        //std::cout << Gmax.get_value() <<  " " << Gmax_init << " " <<  term_threshold*Gmax_init << std::endl;
+			//std::cout << Gmax.get_value() <<  " " << Gmax_init << " " <<  term_threshold*Gmax_init << std::endl;
         if (iterations > max_iter && max_iter>0) {
             mexPrintf("Exceeded max iterations: %d\n", max_iter);
             break;
         }
+		
+		if(maxChange <= term_threshold){
+			break;
+		}
         
         for(int i=0; i<logregprob->nx; i++) shuffled_indices[i] = i;
         active_size = logregprob->nx;
@@ -343,18 +368,18 @@ void compute_logreg(shotgun_data * prob, double lambda, double term_threshold, i
      }
    }// end iterations
 
-   if (!verbose){
+/*   if (!verbose){
       double l1x=0, loglikelihood=0;
       int l0=0;
       double obj = compute_objective_logreg(lambda, &l1x, &loglikelihood, &l0, NULL);
       if (l1x == 0)	
 	all_zero = true;
       printf("objective is: %g l1: %g loglikelihood %g l0: %d\n", obj, l1x, loglikelihood, l0); 
-   }
+   }*/
 
    delete[] active;
    delete[] xjneg;
-  mexPrintf("Finished Shotgun CDN in %d iterations\n", iterations);
+		//  mexPrintf("Finished Shotgun CDN in %d iterations\n", iterations);
 }
 
 

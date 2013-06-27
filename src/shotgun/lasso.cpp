@@ -61,13 +61,27 @@ valuetype_t soft_thresholdO(valuetype_t _lambda, valuetype_t shootDiff) {
 	               (shootDiff < -_lambda) * (-_lambda- shootDiff) ;
 }
 
-valuetype_t soft_threshold(valuetype_t _lambda, valuetype_t shootDiff) {
+/*valuetype_t soft_threshold(valuetype_t _lambda, valuetype_t shootDiff) {
   if (shootDiff > _lambda) return _lambda - shootDiff;
   if (shootDiff < -_lambda) return -_lambda - shootDiff ;
   else return 0;
+}*/
+
+valuetype_t soft_threshold(valuetype_t _lambda, valuetype_t shootDiff, int positive) {
+	if(positive==1){
+		if (shootDiff < -_lambda) return -_lambda - shootDiff ;
+		else return 0;
+		
+	}else {
+		if (shootDiff > _lambda) return _lambda - shootDiff;
+		if (shootDiff < -_lambda) return -_lambda - shootDiff ;
+		else return 0;
+		
+	}
 }
 
-double shoot(int x_i, valuetype_t lambda) {
+
+double shoot(int x_i, valuetype_t lambda ,int positive) {
     feature& feat = lassoprob->feature_consts[x_i];
     valuetype_t oldvalue = lassoprob->x[x_i];
     
@@ -82,7 +96,7 @@ double shoot(int x_i, valuetype_t lambda) {
     }
     
     valuetype_t S_j = 2 * AtAxj - feat.covar * oldvalue - feat.Ay_i;
-    valuetype_t newvalue = soft_threshold(lambda,S_j)/feat.covar;
+    valuetype_t newvalue = soft_threshold(lambda,S_j,positive)/feat.covar;
     valuetype_t delta = (newvalue - oldvalue);
     
     // Update ax
@@ -131,7 +145,7 @@ valuetype_t get_term_threshold(int k, int K, double delta_threshold) {
 
 
 
-void main_optimization_loop(double lambda, int regpathlength, double threshold, int maxiter, int verbose) {
+void main_optimization_loop(double lambda, int positive, int regpathlength, double threshold, int maxiter, int verbose) {
     // Empirically found heuristic for deciding how malassoprob->ny steps
     // to take on the regularization path
     int regularization_path_length = (regpathlength <= 0 ? 1+(int)(lassoprob->nx/2000) : regpathlength);
@@ -159,7 +173,7 @@ void main_optimization_loop(double lambda, int regpathlength, double threshold, 
         // Parallel loop
         #pragma omp parallel for  
         for(int i=0; i<lassoprob->nx; i++) 
-            delta[i] = shoot(i, lambda);
+            delta[i] = shoot(i, lambda, positive);
         maxChange = 0;
         // TODO: use OpenMP reductions (although - not much to gain)
         for(int i=0; i<lassoprob->nx; i++)
@@ -187,10 +201,10 @@ void main_optimization_loop(double lambda, int regpathlength, double threshold, 
 }
 
 
-double solveLasso(shotgun_data  * probdef, double lambda, int regpathlength, double threshold, int maxiter, int verbose) {
+double solveLasso(shotgun_data  * probdef, double lambda, int positive, int regpathlength, double threshold, int maxiter, int verbose) {
     lassoprob = probdef;
     initialize();
-    main_optimization_loop(lambda, regpathlength, threshold, maxiter, verbose); 
+    main_optimization_loop(lambda, positive,regpathlength, threshold, maxiter, verbose); 
     return 0;
 }
 

@@ -103,8 +103,8 @@ struct shotgun_data {
 void convert_2_mat(const char * filename, shotgun_data * prob);
 void convert_2_vec(const char * filename, shotgun_data * prob);
 
-double solveLasso(shotgun_data * prob, double lambda, int regpathlength, double threshold, int maxiter, int verbose);
-void compute_logreg(shotgun_data * prob, double lambda, double term_threshold, int max_iter, int verbose, bool &all_zero);
+double solveLasso(shotgun_data * prob, double lambda, int positive, int regpathlength, double threshold, int maxiter, int verbose);
+void compute_logreg(shotgun_data * prob, double lambda, int positive, double term_threshold, int max_iter, int verbose, bool &all_zero);
 void write_to_file(const char * filename, int * I, int * J, double * val, int M, int N, int nnz);
 
 #endif

@@ -1,6 +1,13 @@
-lasso <- function (X, y, lambda, eps = 1e-12) {
-	.Call("multitask_lasso", X, y, lambda, eps, PACKAGE = "multitask")
+lasso <- function (X, y, lambda, model, positive, eps = 1e-12) {
+  if(model=="linear") model <- 1
+  else if(model=="logistic") model <- 2
+  .Call("multitask_lasso", X, y, lambda, model, as.integer(positive), eps, PACKAGE = "multitask")
 }
+
+#lasso2 <- function (X, y, lambda, eps = 1e-12) {
+#	.Call("multitask_lasso2", X, y, lambda, eps, PACKAGE = "multitask")
+#}
+
 
 x.tilde <- function (X, tasks, groups, d.cur, eta.cur, K, k) {
 	.Call("multitask_x_tilde", X, tasks, groups, d.cur, eta.cur, K, k, PACKAGE = "multitask")
