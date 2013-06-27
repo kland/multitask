@@ -1,6 +1,10 @@
 lasso <- function (X, y, lambda, model, positive, eps = 1e-12) {
-  if (model == "linear") model <- 0
-  else if(model=="logistic") model <- 1
+  if (model == "linear") {
+  	model <- 0
+  	lambda <- lambda*2
+  } else if(model=="logistic") {
+  	model <- 1
+  }
   .Call("multitask_lasso", X, y, lambda, model, as.integer(positive), eps, PACKAGE = "multitask")
 }
 
@@ -20,48 +24,7 @@ Beta.new <- function (groups, alpha.new, d.new, eta.new, K) {
 	.Call("multitask_beta_new", groups, alpha.new, d.new, eta.new, K, PACKAGE = "multitask")
 }
 
-#solving the garotte problem 
-solveGarotte.linear<-function(y,X,lambda=1,eps=1e-12){
-  require(quadprog)
-  # quadprog: solving quadratic programming problems of the
-  # form min(-d^T b + 1/2 b^T D b) with the constraints A^T b >= b_0.
-
-  n <- length(y) 	# n: number of total replicates	
-  K <- ncol(X) 	# K: number of groups
-	
-  # check for zero or low eigenvalues, extra to check if system is solvable.
-  dout<-rep(0,K)
-  pick1<-apply(abs(X),2,sum)>eps
-  X<-X[,pick1,drop=F]
-  if (ncol(X)==0){
-    return(dout)
-  }
-  pick2<-!abs(eigen(t(X) %*% X)$values)<eps
-  X<-X[,pick2,drop=F]
-	
-  # K: new number of groups
-  K <- ncol(X)
-	
-  if(is.null(dim(X)))
-    return(dout)
-	
-  linvec <- t(t(y) %*% X - rep(lambda,K))
-  quadmat <- t(X) %*% X
-	
-  A <- diag(K)
-  d0<-rep(0,K)
-	
-  try(sol<-solve.QP(quadmat, linvec, A, d0)$solution)	
-  try(sol[abs(sol)<eps]<-0)
-  try(dout[pick1][pick2]<-sol)
-
-  return(dout)
-}
-
-multitask.linear<-function(X,y,tasks,groups,lambda,eps=1e-12){
-
-  require(penalized)
-  require(glmnet)
+multitask<-function(X,y,tasks,groups,lambda,model="linear",eps=1e-12){
 		
 # initial formatting
   y<-as.numeric(y)
@@ -74,17 +37,17 @@ multitask.linear<-function(X,y,tasks,groups,lambda,eps=1e-12){
   L <- ncol(groups)		# groups
 
 # select random starting points  
-  dstart<-runif(L,0.5,5)
+  dstart<- rep(1,L)
   alphastart<-matrix(runif(p*K,-0.1,0.1),nrow=p,ncol=K)
-  etastart<-matrix(runif(L*K,0.5,5),nrow=L,ncol=K)
+  etastart<-matrix(1,nrow=L,ncol=K)
   betastart<-alphastart
-		
+
 # variables holding new and current estimates of parameters
   alpha.cur <- alphastart   # size: p x K 
   d.cur <-dstart            # size: L x 1 (vector of length L)
   eta.cur <-etastart        # size: L x K
   beta.cur <- betastart     # size: p x K 
-
+  bic<-NULL
 
 # Here starts the loop that should be moved to C++
 #
@@ -100,12 +63,11 @@ multitask.linear<-function(X,y,tasks,groups,lambda,eps=1e-12){
   while(!converged){
     # 1. update alpha
     Xtilde <- x.tilde(X, tasks, groups, d.cur, eta.cur, K)
-    alpha.new <- matrix(lasso(Xtilde, y, lambda, "linear", TRUE), nrow = p, ncol = K)
+    alpha.new <- matrix(lasso(Xtilde, y, lambda, model="linear", positive=F), nrow = p, ncol = K)
     
     # 2. update d
     Xtilde2 <- x.tilde.2(X, tasks, groups, alpha.new, eta.cur, K)
-    # this is the call to the quadprog solver
-    d.new<-sign(solveGarotte.linear(y,Xtilde2))
+    d.new <- sign(lasso(Xtilde2,y,lambda=1,model=model,positive=T))
  		
     # 3. update eta
     eta.new<-matrix(NA,nrow=L,ncol=K)
@@ -113,7 +75,7 @@ multitask.linear<-function(X,y,tasks,groups,lambda,eps=1e-12){
       task<-levels(tasks)[k]
       # this matrix is of size n x L. Corresponds to equation III (extra notation in paper).
       Xtilde3 <- x.tilde.3(X, tasks, groups, alpha.new, d.new, K, k)
-      eta.new[,k]<-solveGarotte.linear(y[tasks==task],Xtilde3)
+      eta.new[,k]<-lasso(Xtilde3,y[tasks==task],lambda=1,model=model,positive=T)
     }
  
     # 4. update beta
@@ -122,6 +84,16 @@ multitask.linear<-function(X,y,tasks,groups,lambda,eps=1e-12){
     # check convergence
     if (max(abs(beta.new - beta.cur))<eps){
       converged<-TRUE
+      
+       ## calculate BIC
+      df<-sum(abs(beta.new)>eps)
+      SSe<-NULL
+      for(k in 1:K){
+        task<-levels(tasks)[k]
+        SSe<-sum(SSe,sum((y[tasks==task]-X[tasks==task,] %*% beta.new[,k])^2))
+      }
+      ll<- -((sum(n))/2)*(log(SSe)-log(sum(n))+log(2*pi)+1)
+      bic<- c(bic,-2*ll + df*log(sum(n)))
     }
 
     # update current estimates
@@ -139,5 +111,6 @@ multitask.linear<-function(X,y,tasks,groups,lambda,eps=1e-12){
   fit$tasks <- tasks
   fit$groups <- groups
   fit$lambda <- lambda
+  fit$bic<-bic
   fit
 }
