@@ -19,7 +19,7 @@ test <- function () {
 	
 	#estimate parameters
 
-	out <- multitask(X, y, tasks, groups, lambda)
+	out <- multitask.linear(X, y, tasks, groups, lambda)
 
 	print(out)
 }

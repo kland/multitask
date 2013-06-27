@@ -4,15 +4,21 @@ lasso <- function (X, y, lambda, model, positive, eps = 1e-12) {
   .Call("multitask_lasso", X, y, lambda, model, as.integer(positive), eps, PACKAGE = "multitask")
 }
 
-#lasso2 <- function (X, y, lambda, eps = 1e-12) {
-#	.Call("multitask_lasso2", X, y, lambda, eps, PACKAGE = "multitask")
-#}
-
-
-x.tilde <- function (X, tasks, groups, d.cur, eta.cur, K, k) {
-	.Call("multitask_x_tilde", X, tasks, groups, d.cur, eta.cur, K, k, PACKAGE = "multitask")
+x.tilde <- function (X, tasks, groups, d.cur, eta.cur, K) {
+	.Call("multitask_x_tilde", X, tasks, groups, d.cur, eta.cur, K, PACKAGE = "multitask")
 }
 
+x.tilde.2 <- function (X, tasks, groups, alpha.new, eta.cur, K) {
+	.Call("multitask_x_tilde_2", X, tasks, groups, alpha.new, eta.cur, K, PACKAGE = "multitask")
+}
+
+x.tilde.3 <- function (X, tasks, groups, alpha.new, d.new, K, k) {
+	.Call("multitask_x_tilde_3", X, tasks, groups, alpha.new, d.new, K, k, PACKAGE = "multitask")
+}
+
+Beta.new <- function (groups, alpha.new, d.new, eta.new, K) {
+	.Call("multitask_beta_new", groups, alpha.new, d.new, eta.new, K, PACKAGE = "multitask")
+}
 
 #solving the garotte problem 
 solveGarotte.linear<-function(y,X,lambda=1,eps=1e-12){
@@ -93,39 +99,11 @@ multitask.linear<-function(X,y,tasks,groups,lambda,eps=1e-12){
   converged<-FALSE
   while(!converged){
     # 1. update alpha
-    alpha.new<-matrix(NA,nrow=p,ncol=K)
-    for(k in 1:K){
-      task<-levels(tasks)[k]
-      # this matrix is of size n x p. Corresponds to equation I (extra notation in paper).
-      #Xtilde<-X[tasks==task,] %*% diag(apply(groups %*% diag(d.cur * eta.cur[,k]),1,sum))
-      Xtilde <- x.tilde(X, tasks, groups, d.cur, eta.cur, K, k)
-      # this is the call to the Lasso solver
-      #alpha.fit<-penalized(y[tasks==task],Xtilde,unpenalized = ~0,lambda1=lambda,standardize=F,trace=F)
-      #alpha.new[,k]<-coef(alpha.fit,"all")
-      #TODO: Find out why result from shotgun lasso and penalized differ
-      alpha.new[,k] <- lasso(Xtilde, y[tasks==task], lambda)
-    }
-
-#    # alternative, expanded matrix
-#    Xtilde <- list()
-#    for(k in 1:K){
-#      task<-levels(tasks)[k]
-#      Xtilde[[k]]<-(X[tasks==task,] %*% diag(apply(groups %*% diag(d.cur * eta.cur[,k]),1,sum)))
-#    }
-#    Xtilde <- as.matrix(bdiag(Xtilde))
-#    #penalized
-#    #alpha.fit<-penalized(y,Xtilde,unpenalized = ~0,lambda1=lambda,standardize=F,trace=F)
-#    #alpha.new <- matrix(coef(alpha.fit, "all"), nrow = p, ncol = K)
-#    #shotgun lasso
-#    alpha.new <- matrix(lasso(Xtilde, y, lambda), nrow = p, ncol = K)
+    Xtilde <- x.tilde(X, tasks, groups, d.cur, eta.cur, K)
+    alpha.new <- matrix(lasso(Xtilde, y, lambda, "linear", TRUE), nrow = p, ncol = K)
     
     # 2. update d
-    # Xtilde2 is of size K*n x L after this loop. Corresponds to equation II (extra notation in paper).
-    Xtilde2 <- NULL
-    for(k in 1:K){
-      task<-levels(tasks)[k]
-       Xtilde2<-rbind(Xtilde2,((X[tasks==task,] %*% diag(alpha.new[,k])) %*% groups) %*% diag(eta.cur[,k]))
-    }
+    Xtilde2 <- x.tilde.2(X, tasks, groups, alpha.new, eta.cur, K)
     # this is the call to the quadprog solver
     d.new<-sign(solveGarotte.linear(y,Xtilde2))
  		
@@ -134,12 +112,12 @@ multitask.linear<-function(X,y,tasks,groups,lambda,eps=1e-12){
     for(k in 1:K){
       task<-levels(tasks)[k]
       # this matrix is of size n x L. Corresponds to equation III (extra notation in paper).
-      Xtilde3<-((X[tasks==task,] %*% diag(alpha.new[,k])) %*% groups) %*% diag(d.new)
+      Xtilde3 <- x.tilde.3(X, tasks, groups, alpha.new, d.new, K, k)
       eta.new[,k]<-solveGarotte.linear(y[tasks==task],Xtilde3)
     }
  
     # 4. update beta
-    beta.new <- alpha.new * (groups %*% (diag(d.new) %*% eta.new))
+    beta.new <- Beta.new(groups, alpha.new, d.new, eta.new, K)
     
     # check convergence
     if (max(abs(beta.new - beta.cur))<eps){
