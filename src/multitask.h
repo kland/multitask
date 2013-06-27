@@ -3,6 +3,10 @@
 
 #include <Rcpp.h>
 
+/*model values*/
+#define MULTITASK_LINEAR 0
+#define MULTITASK_LOGISTIC 1
+
 RcppExport
 SEXP multitask_x_tilde(SEXP X, SEXP tasks, SEXP groups, SEXP d_cur, SEXP eta_cur, SEXP K);
 

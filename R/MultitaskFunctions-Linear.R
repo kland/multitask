@@ -1,6 +1,6 @@
 lasso <- function (X, y, lambda, model, positive, eps = 1e-12) {
-  if(model=="linear") model <- 1
-  else if(model=="logistic") model <- 2
+  if (model == "linear") model <- 0
+  else if(model=="logistic") model <- 1
   .Call("multitask_lasso", X, y, lambda, model, as.integer(positive), eps, PACKAGE = "multitask")
 }
 

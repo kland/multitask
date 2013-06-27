@@ -180,9 +180,9 @@ SEXP multitask_lasso(SEXP X0, SEXP y0, SEXP lambda0, SEXP model0, SEXP positive0
 	int verbose = 0;
 	bool all_zero = false;
 	
-	if (model == 1) {
+	if (model == MULTITASK_LINEAR) {
 		solveLasso(&data, lambda, positive, regpathLength, eps, maxIter, verbose);
-	} else if (model == 2) {
+	} else if (model == MULTITASK_LOGISTIC) {
 		compute_logreg(&data, lambda, positive, eps, maxIter, verbose, all_zero);
 	}else{
 		fprintf(stderr, "Unknown method\n");
