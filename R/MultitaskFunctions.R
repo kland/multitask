@@ -16,8 +16,8 @@ x.tilde.2 <- function (X, tasks, groups, alpha.new, eta.cur, K) {
   .Call("multitask_x_tilde_2", X, tasks, groups, alpha.new, eta.cur, K, PACKAGE = "multitask")
 }
 
-x.tilde.3 <- function (X, tasks, groups, alpha.new, d.new, K, k) {
-  .Call("multitask_x_tilde_3", X, tasks, groups, alpha.new, d.new, K, k, PACKAGE = "multitask")
+x.tilde.3 <- function (X, tasks, groups, alpha.new, d.new, K) {
+  .Call("multitask_x_tilde_3", X, tasks, groups, alpha.new, d.new, K, PACKAGE = "multitask")
 }
 
 Beta.new <- function (groups, alpha.new, d.new, eta.new, K) {
@@ -74,14 +74,9 @@ multitask<-function(X,y,tasks,groups,lambda,model="linear",eps=1e-12){
     d.new <- sign(lasso(Xtilde2,y,lambda=1,model=model,positive=T))
      
     # 3. update eta
-    eta.new<-matrix(NA,nrow=L,ncol=K)
-    for(k in 1:K){
-      task<-levels(tasks)[k]
-      # this matrix is of size n x L. Corresponds to equation III (extra notation in paper).
-      Xtilde3 <- x.tilde.3(X, tasks, groups, alpha.new, d.new, K, k)
-      eta.new[,k]<-lasso(Xtilde3,y[tasks==task],lambda=1,model=model,positive=T)
-    }
- 
+    Xtilde3 <- x.tilde.3(X, tasks, groups, alpha.new, d.new, K)
+    eta.new <- matrix(lasso(Xtilde3, y, lambda=1, model=model, positive=T), nrow = L, ncol = K)
+     
     # 4. update beta
     beta.new <- Beta.new(groups, alpha.new, d.new, eta.new, K)
 
