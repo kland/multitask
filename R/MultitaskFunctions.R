@@ -67,7 +67,7 @@ multitask<-function(X,y,tasks,groups,lambda,model="linear",eps=1e-12){
   while(!converged){
     # 1. update alpha
     Xtilde <- x.tilde(X, tasks, groups, d.cur, eta.cur, K)
-    alpha.new <- matrix(lasso(Xtilde, y, lambda, model="linear", positive=F), nrow = p, ncol = K)
+    alpha.new <- matrix(lasso(Xtilde, y, lambda, model=model, positive=F), nrow = p, ncol = K)
     
     # 2. update d
     Xtilde2 <- x.tilde.2(X, tasks, groups, alpha.new, eta.cur, K)
