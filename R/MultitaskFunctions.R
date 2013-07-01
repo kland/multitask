@@ -1,40 +1,44 @@
 lasso <- function (X, y, lambda, model, positive, eps = 1e-12) {
   if (model == "linear") {
-  	model <- 0
-  	lambda <- lambda*2
+    model <- 0
+    lambda <- lambda*2
   } else if(model=="logistic") {
-  	model <- 1
+    model <- 1
   }
   .Call("multitask_lasso", X, y, lambda, model, as.integer(positive), eps, PACKAGE = "multitask")
 }
 
 x.tilde <- function (X, tasks, groups, d.cur, eta.cur, K) {
-	.Call("multitask_x_tilde", X, tasks, groups, d.cur, eta.cur, K, PACKAGE = "multitask")
+  .Call("multitask_x_tilde", X, tasks, groups, d.cur, eta.cur, K, PACKAGE = "multitask")
 }
 
 x.tilde.2 <- function (X, tasks, groups, alpha.new, eta.cur, K) {
-	.Call("multitask_x_tilde_2", X, tasks, groups, alpha.new, eta.cur, K, PACKAGE = "multitask")
+  .Call("multitask_x_tilde_2", X, tasks, groups, alpha.new, eta.cur, K, PACKAGE = "multitask")
 }
 
 x.tilde.3 <- function (X, tasks, groups, alpha.new, d.new, K, k) {
-	.Call("multitask_x_tilde_3", X, tasks, groups, alpha.new, d.new, K, k, PACKAGE = "multitask")
+  .Call("multitask_x_tilde_3", X, tasks, groups, alpha.new, d.new, K, k, PACKAGE = "multitask")
 }
 
 Beta.new <- function (groups, alpha.new, d.new, eta.new, K) {
-	.Call("multitask_beta_new", groups, alpha.new, d.new, eta.new, K, PACKAGE = "multitask")
+  .Call("multitask_beta_new", groups, alpha.new, d.new, eta.new, K, PACKAGE = "multitask")
+}
+
+Bic <- function (X, y, beta.new, eps, n) {
+  .Call("multitask_bic", X, y, beta.new, eps, n, PACKAGE = "multitask")
 }
 
 multitask<-function(X,y,tasks,groups,lambda,model="linear",eps=1e-12){
-		
+    
 # initial formatting
   y<-as.numeric(y)
   X<-data.matrix(X)
   tasks<-as.factor(tasks)
-	
-  n <- as.numeric(table(tasks))	# replicates
-  p <- ncol(X)	                # predictors
+  
+  n <- as.numeric(table(tasks))  # replicates
+  p <- ncol(X)                  # predictors
   K <- length(levels(tasks))    # tasks
-  L <- ncol(groups)		# groups
+  L <- ncol(groups)    # groups
 
 # select random starting points  
   dstart<- rep(1,L)
@@ -68,7 +72,7 @@ multitask<-function(X,y,tasks,groups,lambda,model="linear",eps=1e-12){
     # 2. update d
     Xtilde2 <- x.tilde.2(X, tasks, groups, alpha.new, eta.cur, K)
     d.new <- sign(lasso(Xtilde2,y,lambda=1,model=model,positive=T))
- 		
+     
     # 3. update eta
     eta.new<-matrix(NA,nrow=L,ncol=K)
     for(k in 1:K){
@@ -80,28 +84,21 @@ multitask<-function(X,y,tasks,groups,lambda,model="linear",eps=1e-12){
  
     # 4. update beta
     beta.new <- Beta.new(groups, alpha.new, d.new, eta.new, K)
-    
+
     # check convergence
     if (max(abs(beta.new - beta.cur))<eps){
       converged<-TRUE
-      
-       ## calculate BIC
-      df<-sum(abs(beta.new)>eps)
-      SSe<-NULL
-      for(k in 1:K){
-        task<-levels(tasks)[k]
-        SSe<-sum(SSe,sum((y[tasks==task]-X[tasks==task,] %*% beta.new[,k])^2))
-      }
-      ll<- -((sum(n))/2)*(log(SSe)-log(sum(n))+log(2*pi)+1)
-      bic<- c(bic,-2*ll + df*log(sum(n)))
     }
-
+    
     # update current estimates
     alpha.cur<-alpha.new
     d.cur<-d.new
     eta.cur<-eta.new
     beta.cur<-beta.new
   } #end of while loop
+
+  ## calculate BIC
+  bic <- Bic(X, y, beta.new, eps, n[1])
   
   fit<-NULL
   fit$beta <- beta.cur

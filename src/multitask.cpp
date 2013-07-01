@@ -1,3 +1,4 @@
+#include <math.h>
 #include <Rcpp.h>
 #include "shotgun/common.h"
 #include "multitask.h"
@@ -143,6 +144,48 @@ SEXP multitask_beta_new(SEXP groups0, SEXP alpha_new0, SEXP d_new0, SEXP eta_new
 		}
 	}
 	return result;
+}
+
+
+SEXP multitask_bic(SEXP X0, SEXP y0, SEXP beta_new0, SEXP eps0, SEXP n0)
+{
+	//convert input parameters to Rcpp types or primitive C++ types
+	Rcpp::NumericMatrix X(X0);	
+	Rcpp::NumericVector y(y0);
+	Rcpp::NumericMatrix beta_new(beta_new0);
+	double eps = Rcpp::as<double>(eps0);
+	assert(eps > 0.0);
+	int n = Rcpp::as<int>(n0);
+	assert(n > 0);
+	
+	int p = X.ncol();
+	int K = X.nrow() / n;
+	
+	/*calculate df*/
+	int df = 0;
+	int N = beta_new.nrow() * beta_new.ncol();
+	for (int i = 0; i < N; i++) {
+		if (fabs(beta_new[i]) > eps) {
+			 df++;
+		}
+	}
+
+	/*calculate SSe*/
+	double SSe = 0.0;
+	for (int k = 0; k < K; k++) {
+		for (int i = k * n; i < (k + 1) * n; i++) {
+			double Xrow_betacol = 0.0;
+			for (int j = 0; j < p; j++) {
+				Xrow_betacol += elem(X, i, j) * elem(beta_new, j, k);
+			}
+			SSe += pow(y[i] - Xrow_betacol, 2);
+		}
+	}
+	
+	double ll = -y.size() / 2.0 * (log(SSe) - log(y.size()) + log(2.0 * M_PI) + 1);
+	double result = -2 * ll + df * log(y.size());
+
+	return Rcpp::wrap(result);
 }
 
 

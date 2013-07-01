@@ -20,6 +20,9 @@ RcppExport
 SEXP multitask_beta_new(SEXP groups, SEXP alpha_new, SEXP d_new, SEXP eta_new, SEXP K);
 
 RcppExport
+SEXP multitask_bic(SEXP X, SEXP y, SEXP beta_new, SEXP eps, SEXP n);
+
+RcppExport
 SEXP multitask_lasso(SEXP X, SEXP y, SEXP lambda, SEXP model, SEXP positive, SEXP eps);
 
 #endif
