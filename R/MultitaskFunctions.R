@@ -1,114 +1,16 @@
-lasso <- function (X, y, lambda, model, positive, eps = 1e-12) {
-  .Call("multitask_lasso", X, y, lambda, model, as.integer(positive), eps, PACKAGE = "multitask")
-}
+multitask <- function(X, y, tasks, groups, lambda, model="linear", eps=1e-12) {
 
-x.tilde <- function (X, tasks, groups, d.cur, eta.cur, K) {
-  .Call("multitask_x_tilde", X, tasks, groups, d.cur, eta.cur, K, PACKAGE = "multitask")
-}
+	tasks <- as.factor(tasks)
+	K <- length(levels(tasks))    # tasks
 
-x.tilde.2 <- function (X, tasks, groups, alpha.new, eta.cur, K) {
-  .Call("multitask_x_tilde_2", X, tasks, groups, alpha.new, eta.cur, K, PACKAGE = "multitask")
-}
-
-x.tilde.3 <- function (X, tasks, groups, alpha.new, d.new, K) {
-  .Call("multitask_x_tilde_3", X, tasks, groups, alpha.new, d.new, K, PACKAGE = "multitask")
-}
-
-Beta.new <- function (groups, alpha.new, d.new, eta.new, K) {
-  .Call("multitask_beta_new", groups, alpha.new, d.new, eta.new, K, PACKAGE = "multitask")
-}
-
-Bic <- function (X, y, beta.new, eps, n) {
-  .Call("multitask_bic", X, y, beta.new, eps, n, PACKAGE = "multitask")
-}
-
-multitask<-function(X,y,tasks,groups,lambda,model="linear",eps=1e-12){
-    
-# initial formatting
-  y<-as.numeric(y)
-  X<-data.matrix(X)
-  tasks<-as.factor(tasks)
-  
-  n <- as.numeric(table(tasks))  # replicates
-  p <- ncol(X)                  # predictors
-  K <- length(levels(tasks))    # tasks
-  L <- ncol(groups)    # groups
-
-# select random starting points  
-  dstart<- rep(1,L)
-  alphastart<-matrix(runif(p*K,-0.1,0.1),nrow=p,ncol=K)
-  etastart<-matrix(1,nrow=L,ncol=K)
-  betastart<-alphastart
-
-  if (model == "linear") {
-    model <- 0
-  } else if(model=="logistic") {
-    model <- 1
-  }
-  result <- .Call("multitask", X, y, K, groups, lambda, model, eps, PACKAGE = "multitask")
-  print("C++: result = "); print(result)
-
-# variables holding new and current estimates of parameters
-  alpha.cur <- alphastart   # size: p x K 
-  d.cur <-dstart            # size: L x 1 (vector of length L)
-  eta.cur <-etastart        # size: L x K
-  beta.cur <- betastart     # size: p x K 
-  bic<-NULL
-
-# Here starts the loop that should be moved to C++
-#
-# Input arguments:
-# X,y,tasks,groups,lambda
-# alpha.cur,d.cur,eta.cur,beta.cur (i.e. starting values for the parameters, could also be assigned in C++)
-#
-# Return arguments:
-# alpha.cur,d.cur,eta.cur,beta.cur (i.e. the final values for the parameters)
-# 
-
-  converged<-FALSE
-  while(!converged){
-    # 1. update alpha
-    Xtilde <- x.tilde(X, tasks, groups, d.cur, eta.cur, K)
-    alpha.new <- matrix(lasso(Xtilde, y, lambda, model=model, positive=F), nrow = p, ncol = K)
-    #print("R: alpha.new = "); print(alpha.new)
-    
-    # 2. update d
-    Xtilde2 <- x.tilde.2(X, tasks, groups, alpha.new, eta.cur, K)
-    d.new <- sign(lasso(Xtilde2,y,lambda=1,model=model,positive=T))
-   #print("R: d.new = "); print(d.new)
-        
-    # 3. update eta
-    Xtilde3 <- x.tilde.3(X, tasks, groups, alpha.new, d.new, K)
-    eta.new <- matrix(lasso(Xtilde3, y, lambda=1, model=model, positive=T), nrow = L, ncol = K)
-   #print("R: eta.new = "); print(eta.new)
-     
-    # 4. update beta
-    beta.new <- Beta.new(groups, alpha.new, d.new, eta.new, K)
-   #print("R: beta.new = "); print(beta.new)
-
-    # check convergence
-    if (max(abs(beta.new - beta.cur))<eps){
-      converged<-TRUE
-    }
-    
-    # update current estimates
-    alpha.cur<-alpha.new
-    d.cur<-d.new
-    eta.cur<-eta.new
-    beta.cur<-beta.new
-  } #end of while loop
-
-  ## calculate BIC
-  bic <- Bic(X, y, beta.new, eps, n[1])
-  
-  fit<-NULL
-  fit$beta <- beta.cur
-  fit$alpha <- alpha.cur
-  fit$d <- d.cur
-  fit$eta <- eta.cur
-  fit$tasks <- tasks
-  fit$groups <- groups
-  fit$lambda <- lambda
-  fit$bic<-bic
-  fit
+	if (model == "linear") {
+		model.num <- 0
+	} else if(model=="logistic") {
+		model.num <- 1
+	}
+	fit <- .Call("multitask", X, y, K, groups, lambda, model.num, eps, PACKAGE = "multitask")
+	fit$tasks <- tasks
+	fit$groups <- groups
+	fit$lambda <- lambda
+	fit
 }
