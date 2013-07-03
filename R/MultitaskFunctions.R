@@ -1,10 +1,4 @@
 lasso <- function (X, y, lambda, model, positive, eps = 1e-12) {
-  if (model == "linear") {
-    model <- 0
-    lambda <- lambda*2
-  } else if(model=="logistic") {
-    model <- 1
-  }
   .Call("multitask_lasso", X, y, lambda, model, as.integer(positive), eps, PACKAGE = "multitask")
 }
 
@@ -46,6 +40,14 @@ multitask<-function(X,y,tasks,groups,lambda,model="linear",eps=1e-12){
   etastart<-matrix(1,nrow=L,ncol=K)
   betastart<-alphastart
 
+  if (model == "linear") {
+    model <- 0
+  } else if(model=="logistic") {
+    model <- 1
+  }
+  result <- .Call("multitask", X, y, K, groups, lambda, model, eps, PACKAGE = "multitask")
+  print("C++: result = "); print(result)
+
 # variables holding new and current estimates of parameters
   alpha.cur <- alphastart   # size: p x K 
   d.cur <-dstart            # size: L x 1 (vector of length L)
@@ -68,17 +70,21 @@ multitask<-function(X,y,tasks,groups,lambda,model="linear",eps=1e-12){
     # 1. update alpha
     Xtilde <- x.tilde(X, tasks, groups, d.cur, eta.cur, K)
     alpha.new <- matrix(lasso(Xtilde, y, lambda, model=model, positive=F), nrow = p, ncol = K)
+    #print("R: alpha.new = "); print(alpha.new)
     
     # 2. update d
     Xtilde2 <- x.tilde.2(X, tasks, groups, alpha.new, eta.cur, K)
     d.new <- sign(lasso(Xtilde2,y,lambda=1,model=model,positive=T))
-     
+   #print("R: d.new = "); print(d.new)
+        
     # 3. update eta
     Xtilde3 <- x.tilde.3(X, tasks, groups, alpha.new, d.new, K)
     eta.new <- matrix(lasso(Xtilde3, y, lambda=1, model=model, positive=T), nrow = L, ncol = K)
+   #print("R: eta.new = "); print(eta.new)
      
     # 4. update beta
     beta.new <- Beta.new(groups, alpha.new, d.new, eta.new, K)
+   #print("R: beta.new = "); print(beta.new)
 
     # check convergence
     if (max(abs(beta.new - beta.cur))<eps){
