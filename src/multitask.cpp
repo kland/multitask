@@ -271,7 +271,7 @@ static Rcpp::NumericVector lasso(Rcpp::NumericMatrix X,
 SEXP multitask(SEXP X0, SEXP y0, SEXP K0, SEXP groups0, SEXP lambda0, SEXP model0, SEXP eps0)
 {
 	Rcpp::NumericVector lasso_result;
-
+	
 	//convert parameters to Rcpp types
 	Rcpp::NumericMatrix X(X0);
 	Rcpp::NumericVector y(y0);
@@ -326,6 +326,7 @@ SEXP multitask(SEXP X0, SEXP y0, SEXP K0, SEXP groups0, SEXP lambda0, SEXP model
 		for (int i = 0; i < L; i++) {
 			d_new[i] = sign(lasso_result[i]);
 		}
+		
 		//printf("C++: d_new = \n"); print(d_new);
 		
 		//update eta
@@ -334,7 +335,7 @@ SEXP multitask(SEXP X0, SEXP y0, SEXP K0, SEXP groups0, SEXP lambda0, SEXP model
 		assert(lasso_result.size() == L * K);
 		Rcpp::NumericMatrix eta_new(L, K, lasso_result.begin());
 		//printf("C++: eta_new = \n"); print(eta_new);
-
+		
 		//update beta
 		beta_new = next_beta(K, groups, alpha_new, d_new, eta_new);
 		assert(beta_new.nrow() == p);
