@@ -50,5 +50,5 @@ simstudy.logistic <- function () {
 	tasks<-rep(LETTERS[1:K],each=n)
 
 	#run method for a sequence of lambdas
-	out <- multitask(X,y,tasks,groups,model="logistic")
+	out <- multitask(X,y,tasks,groups,model="logistic",maxiter=100)
 }

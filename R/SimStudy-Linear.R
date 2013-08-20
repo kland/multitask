@@ -51,5 +51,5 @@ simstudy.linear <- function () {
 	X<-matrix(unlist(apply(X,2,tapply,tasks,scale)),ncol=p)	
 
 	#run method for a sequence of lambdas
-	out <- multitask(X,y,tasks,groups,lambda=40,model="linear")
+	out <- multitask(X,y,tasks,groups,lambda=40,model="linear",maxiter=100)
 }
