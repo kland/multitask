@@ -304,16 +304,26 @@ void compute_logreg(shotgun_data * prob, double lambda, int positive, double ter
                 swap(shuffled_indices[i], shuffled_indices[j]);
         } 
             
-            /* Main parallel loop */
-        #pragma omp parallel for
+		/* Main parallel loop */
 		double maxChange = 0.0;
-        for(int s=0; s<active_size; s++) {
-            int x_i = shuffled_indices[s];
-            double dd = shoot_logreg(x_i, lambda, positive);
-			maxChange = (maxChange < dd ? dd : maxChange);
-			
-        }
-            
+		double localMaxChange;
+#pragma omp parallel private (localMaxChange)
+		{
+			localMaxChange = 0.0;
+#pragma omp for
+			for(int s=0; s<active_size; s++) {
+				int x_i = shuffled_indices[s];
+				double dd = shoot_logreg(x_i, lambda, positive);
+				if (dd > localMaxChange) {
+					localMaxChange = dd;
+				}
+			}  
+#pragma omp critical
+			if (localMaxChange > maxChange) {
+				maxChange = localMaxChange;
+			}
+		}
+                    
         /* Gmax handling */
         Gmax_old = logregprob->Gmax[0];
         if (iterations == 0) {
