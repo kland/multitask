@@ -268,7 +268,7 @@ static Rcpp::NumericVector lasso(Rcpp::NumericMatrix X,
 }
 
 
-SEXP multitask(SEXP X0, SEXP y0, SEXP K0, SEXP groups0, SEXP lambda0, SEXP model0, SEXP eps0, SEXP maxiter0)
+SEXP multitask(SEXP X0, SEXP y0, SEXP K0, SEXP groups0, SEXP lambda0, SEXP model0, SEXP eps0, SEXP maxiter0,SEXP maxitersg0)
 {
 	Rcpp::NumericVector lasso_result;
 	
@@ -281,6 +281,7 @@ SEXP multitask(SEXP X0, SEXP y0, SEXP K0, SEXP groups0, SEXP lambda0, SEXP model
 	int model = Rcpp::as<int>(model0);
 	double eps = Rcpp::as<double>(eps0);
 	int maxiter = Rcpp::as<int>(maxiter0);
+	int maxitersg = Rcpp::as<int>(maxitersg0);
 
 	assert(K > 0);
 	assert(lambda >= 0.0);
@@ -311,8 +312,13 @@ SEXP multitask(SEXP X0, SEXP y0, SEXP K0, SEXP groups0, SEXP lambda0, SEXP model
 	Rcpp::NumericMatrix beta_new;
 	
 	bool converged = false;
-
-	while (! converged) {
+	int iterations = 0;
+    
+    do {
+        ++iterations;
+        if (iterations >= maxiter && maxiter > 0) {
+			break;
+        }
 		//update alpha
 		Rcpp::NumericMatrix Xtilde = x_tilde(X, K, groups, d_cur, eta_cur);
 		lasso_result = lasso(Xtilde, y, lambda, model, false, eps, maxiter);
@@ -322,7 +328,7 @@ SEXP multitask(SEXP X0, SEXP y0, SEXP K0, SEXP groups0, SEXP lambda0, SEXP model
 
 		//update d
 		Rcpp::NumericMatrix Xtilde2 = x_tilde_2(X, K, groups, alpha_new, eta_cur);
-		lasso_result = lasso(Xtilde2, y, 1.0, model, true, eps, maxiter);
+		lasso_result = lasso(Xtilde2, y, 1.0, model, true, eps, maxitersg);
 		assert(lasso_result.size() == L);
 		Rcpp::IntegerVector d_new(L);
 		for (int i = 0; i < L; i++) {
@@ -333,7 +339,7 @@ SEXP multitask(SEXP X0, SEXP y0, SEXP K0, SEXP groups0, SEXP lambda0, SEXP model
 		
 		//update eta
 		Rcpp::NumericMatrix Xtilde3 = x_tilde_3(X, K, groups, alpha_new, d_new);
-		lasso_result = lasso(Xtilde3, y, 1.0, model, true, eps, maxiter);
+		lasso_result = lasso(Xtilde3, y, 1.0, model, true, eps, maxitersg);
 		assert(lasso_result.size() == L * K);
 		Rcpp::NumericMatrix eta_new(L, K, lasso_result.begin());
 		//printf("C++: eta_new = \n"); print(eta_new);
@@ -359,7 +365,7 @@ SEXP multitask(SEXP X0, SEXP y0, SEXP K0, SEXP groups0, SEXP lambda0, SEXP model
 		d_cur = d_new;
 		eta_cur = eta_new;
 		beta_cur = beta_new;
-	}
+	} while (converged != true);
 
 	Rcpp::List result;
 	result["beta"] = beta_cur;
@@ -367,6 +373,7 @@ SEXP multitask(SEXP X0, SEXP y0, SEXP K0, SEXP groups0, SEXP lambda0, SEXP model
 	result["d"] = d_cur;
 	result["eta"] = eta_cur;
 	result["bic"] = bic(X, y, beta_new, eps, n);
+	result["converged"] = converged;
 	
 	return result;
 }

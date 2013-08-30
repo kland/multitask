@@ -1,4 +1,4 @@
-multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linear", standardize=T,eps=1e-12,maxiter=200) {
+multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linear", standardize=T,eps=1e-6,maxiter=500,maxiter.shotgun=200) {
 
   tasks <- as.factor(tasks)             # ensure factor format
   K <- length(levels(tasks))            # tasks
@@ -43,12 +43,13 @@ multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linea
   fit$d <- matrix(NA,nr=L,nc=nlam)
   for(i in 1:nlam){
     lam <- lambda[i]
-    temp.fit <- .Call("multitask", X, y, K, groups, lam, model.num, eps, maxiter, PACKAGE = "multitask")
+    temp.fit <- .Call("multitask", X, y, K, groups, lam, model.num, eps, maxiter, maxiter.shotgun, PACKAGE = "multitask")
     fit$beta[,,i] <- temp.fit$beta
     fit$alpha[,,i] <- temp.fit$alpha
     fit$eta[,,i] <- temp.fit$eta
     fit$d[,i] <- temp.fit$d
     fit$bic <- cbind(fit$bic, as.numeric(temp.fit$bic)) 
+    fit$converged <- cbind(fit$converged, temp.fit$converged) 
 
   }
   fit$tasks <- tasks
