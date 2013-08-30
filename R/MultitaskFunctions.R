@@ -31,11 +31,12 @@ multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linea
       lams <- c(lams,abs(drop(crossprod(X[tasks==task,], resids))))
     }
     lambda.max <- max(lams)
-    lambda.min <- 2*sqrt(max(n)+p)/10
+    lambda.min <- 4*sqrt(max(n)+p)/10
     
-    ##lambda.min <- 0.05
     lambda <- seq(lambda.max,lambda.min,length.out=nlambda)
   }
+
+  lambda <- sort(lambda,decreasing=T)
 
   fit <- NULL; nlam <- length(lambda)
   fit$beta <-  fit$alpha <- array(NA,dim=c(p,K,nlam))
@@ -44,16 +45,28 @@ multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linea
   for(i in 1:nlam){
     lam <- lambda[i]
     temp.fit <- .Call("multitask", X, y, K, groups, lam, model.num, eps, maxiter, maxiter.shotgun, PACKAGE = "multitask")
+    if(!temp.fit$converged){
+      brind <- i
+      break; #skip rest of lambdas, since they are likley to not converge either
+    }
+    fit$converged <- cbind(fit$converged, temp.fit$converged) 
     fit$beta[,,i] <- temp.fit$beta
     fit$alpha[,,i] <- temp.fit$alpha
     fit$eta[,,i] <- temp.fit$eta
     fit$d[,i] <- temp.fit$d
     fit$bic <- cbind(fit$bic, as.numeric(temp.fit$bic)) 
-    fit$converged <- cbind(fit$converged, temp.fit$converged) 
-
+    fit$lambda <- c(fit$lambda,lam)
   }
+
+  fit$alpha <- fit$alpha[,,-(brind:nlam)]
+  fit$beta <- fit$beta[,,-(brind:nlam)]
+  fit$eta <- fit$eta[,,-(brind:nlam)]
+  fit$d <- fit$d[,-(brind:nlam)]
+
+  if(length(brind:nlam)==nlam)
+    warning("No given lambdas converged. Try to give larger lambdas or, as a second option, increase the maxiter parameter.")
+  
   fit$tasks <- tasks
   fit$groups <- groups
-  fit$lambda <- lambda
   fit
 }
