@@ -1,6 +1,6 @@
-multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linear", standardize=T,eps=1e-12,maxiter=100) {
+multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linear", standardize=T,eps=1e-12,maxiter=200) {
 
-  tasks <- as.factor(tasks)
+  tasks <- as.factor(tasks)             # ensure factor format
   K <- length(levels(tasks))            # tasks
   n <- as.numeric(table(tasks))		# replicates
   p <- ncol(X)			        # predictors
@@ -37,14 +37,17 @@ multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linea
     lambda <- seq(lambda.max,lambda.min,length.out=nlambda)
   }
 
-  fit <- NULL
-  for(i in 1:length(lambda)){
+  fit <- NULL; nlam <- length(lambda)
+  fit$beta <-  fit$alpha <- array(NA,dim=c(p,K,nlam))
+  fit$eta <- array(NA,dim=c(L,K,nlam))
+  fit$d <- matrix(NA,nr=L,nc=nlam)
+  for(i in 1:nlam){
     lam <- lambda[i]
     temp.fit <- .Call("multitask", X, y, K, groups, lam, model.num, eps, maxiter, PACKAGE = "multitask")
-    fit$beta <- cbind(fit$beta, as.numeric(temp.fit$beta)) 
-    fit$alpha <- cbind(fit$alpha, as.numeric(temp.fit$alpha)) 
-    fit$d <- cbind(fit$d, as.numeric(temp.fit$d)) 
-    fit$eta <- cbind(fit$eta, as.numeric(temp.fit$eta))
+    fit$beta[,,i] <- temp.fit$beta
+    fit$alpha[,,i] <- temp.fit$alpha
+    fit$eta[,,i] <- temp.fit$eta
+    fit$d[,i] <- temp.fit$d
     fit$bic <- cbind(fit$bic, as.numeric(temp.fit$bic)) 
 
   }
