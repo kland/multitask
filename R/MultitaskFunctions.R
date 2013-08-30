@@ -42,6 +42,7 @@ multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linea
   fit$beta <-  fit$alpha <- array(NA,dim=c(p,K,nlam))
   fit$eta <- array(NA,dim=c(L,K,nlam))
   fit$d <- matrix(NA,nr=L,nc=nlam)
+  brind <- NULL
   for(i in 1:nlam){
     lam <- lambda[i]
     temp.fit <- .Call("multitask", X, y, K, groups, lam, model.num, eps, maxiter, maxiter.shotgun, PACKAGE = "multitask")
@@ -58,13 +59,14 @@ multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linea
     fit$lambda <- c(fit$lambda,lam)
   }
 
-  fit$alpha <- fit$alpha[,,-(brind:nlam)]
-  fit$beta <- fit$beta[,,-(brind:nlam)]
-  fit$eta <- fit$eta[,,-(brind:nlam)]
-  fit$d <- fit$d[,-(brind:nlam)]
-
-  if(length(brind:nlam)==nlam)
-    warning("No given lambdas converged. Try to give larger lambdas or, as a second option, increase the maxiter parameter.")
+  if(!is.null(brind)){
+    fit$alpha <- fit$alpha[,,-(brind:nlam)]
+    fit$beta <- fit$beta[,,-(brind:nlam)]
+    fit$eta <- fit$eta[,,-(brind:nlam)]
+    fit$d <- fit$d[,-(brind:nlam)]
+    if(length(brind:nlam)==nlam)
+      warning("No given lambdas converged. Try to give larger lambdas or, as a second option, increase the maxiter parameter.")
+  }
   
   fit$tasks <- tasks
   fit$groups <- groups

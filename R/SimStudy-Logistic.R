@@ -1,7 +1,7 @@
 simstudy.logistic <- function () {
 
 	# First test case with half of the genes active, and one task killed for one group.
-
+  set.seed(213467)
 	#set up parameters (small problem)
 	n <- 100	# replicates
 	p <- 21		# predictors
