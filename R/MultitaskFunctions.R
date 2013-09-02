@@ -10,6 +10,7 @@ multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linea
     model.num <- 0
   } else if(model=="logistic") {
     model.num <- 1
+    y <- 1*(y==max(y))
   }
 
   if(standardize){
@@ -19,56 +20,55 @@ multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linea
   }
 
   if(is.null(lambda)){
-    lams <- c()
-    for(k in 1:K){
-      task <- levels(tasks)[k]
-      if(model=="linear"){
-        resids <- y[tasks==task]
-      }else if(model=="logistic"){
-        resids <- y[tasks==task] - 0.5
-      } 
-      task <- levels(tasks)[k]
-      lams <- c(lams,abs(drop(crossprod(X[tasks==task,], resids))))
-    }
-    lambda.max <- max(lams)
-    lambda.min <- 4*sqrt(max(n)+p)/10
-    
-    lambda <- seq(lambda.max,lambda.min,length.out=nlambda)
+    lambda <- calcLambda(X,y,tasks,nlambda,model)
   }
-
   lambda <- sort(lambda,decreasing=T)
 
-  fit <- NULL; nlam <- length(lambda)
-  fit$beta <-  fit$alpha <- array(NA,dim=c(p,K,nlam))
-  fit$eta <- array(NA,dim=c(L,K,nlam))
-  fit$d <- matrix(NA,nr=L,nc=nlam)
-  brind <- NULL
-  for(i in 1:nlam){
-    lam <- lambda[i]
-    temp.fit <- .Call("multitask", X, y, K, groups, lam, model.num, eps, maxiter, maxiter.shotgun, PACKAGE = "multitask")
+  if(model=="logistic")
+    y[y==0] <- -1 #format to fit shotgun input
+  
+  fit <- NULL; nlambda <- length(lambda)
+  for(i in 1:nlambda){
+    temp.fit <- .Call("multitask", X, y, K, groups, lambda[i], model.num, eps, maxiter, maxiter.shotgun, PACKAGE = "multitask")
     if(!temp.fit$converged){
-      brind <- i
-      break; #skip rest of lambdas, since they are likley to not converge either
+      break; #skip rest of lambdas, since they are likely to not converge either
     }
-    fit$converged <- cbind(fit$converged, temp.fit$converged) 
-    fit$beta[,,i] <- temp.fit$beta
-    fit$alpha[,,i] <- temp.fit$alpha
-    fit$eta[,,i] <- temp.fit$eta
-    fit$d[,i] <- temp.fit$d
-    fit$bic <- cbind(fit$bic, as.numeric(temp.fit$bic)) 
-    fit$lambda <- c(fit$lambda,lam)
+    fit$converged <- c(fit$converged, temp.fit$converged) 
+    fit$beta <- cbind(fit$beta, as.numeric(temp.fit$beta))
+    fit$alpha <- cbind(fit$alpha, as.numeric(temp.fit$alpha))
+    fit$eta <- cbind(fit$eta,as.numeric(temp.fit$eta))
+    fit$d <- cbind(fit$d, temp.fit$d)
+    fit$bic <- c(fit$bic, as.numeric(temp.fit$bic)) 
+    fit$lambda <- c(fit$lambda,lambda[i])
   }
 
-  if(!is.null(brind)){
-    fit$alpha <- fit$alpha[,,-(brind:nlam)]
-    fit$beta <- fit$beta[,,-(brind:nlam)]
-    fit$eta <- fit$eta[,,-(brind:nlam)]
-    fit$d <- fit$d[,-(brind:nlam)]
-    if(length(brind:nlam)==nlam)
-      warning("No given lambdas converged. Try to give larger lambdas or, as a second option, increase the maxiter parameter.")
+  if(is.null(fit)){
+    warning("No lambdas converged. Try to give larger lambdas or, as a second option, increase the maxiter parameter.")
+  }else{   
+    fit$alpha <- array(fit$alpha, dim=c(p,K,ncol(fit$alpha)))
+    fit$beta <- array(fit$beta, dim=c(p,K,ncol(fit$beta)))
+    fit$eta <- array(fit$eta, dim=c(L,K,ncol(fit$eta)))
   }
-  
+
   fit$tasks <- tasks
   fit$groups <- groups
   fit
 }
+
+calcLambda <- function(X,y,tasks,nlambda,model){
+  lams <- c()
+  for(k in 1:K){
+    task <- levels(tasks)[k]
+    if(model=="linear"){
+      resids <- y[tasks==task]
+    }else if(model=="logistic"){
+      resids <- y[tasks==task] - 0.5 #demands 0/1 for y
+    } 
+    lams <- c(lams,abs(drop(crossprod(X[tasks==task,], resids))))
+  }
+  lambda.max <- max(lams)
+  lambda.min <- 4*sqrt(max(n)+p)/10  
+  lambda <- seq(lambda.max,lambda.min,length.out=nlambda)
+  lambda
+}
+
