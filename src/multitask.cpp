@@ -48,13 +48,13 @@ static void print(Rcpp::NumericMatrix A)
 }
 
 
-static void print(Rcpp::IntegerVector a)
+/*static void print(Rcpp::NumericVector a)
 {
 	for (int i = 0; i < a.size(); i++) {
 		printf("%d ", a[i]);
 	}
 	putchar('\n');
-}
+}*/
 
 
 static void print(Rcpp::NumericVector a)
@@ -69,7 +69,7 @@ static void print(Rcpp::NumericVector a)
 static Rcpp::NumericMatrix x_tilde(Rcpp::NumericMatrix X, 
 	int K,
 	Rcpp::IntegerMatrix groups, 
-	Rcpp::IntegerVector d_cur, 
+	Rcpp::NumericVector d_cur, 
 	Rcpp::NumericMatrix eta_cur)
 {
 	assert(K > 0);
@@ -133,7 +133,7 @@ static Rcpp::NumericMatrix x_tilde_3(Rcpp::NumericMatrix X,
 	int K,
 	Rcpp::IntegerMatrix groups, 
 	Rcpp::NumericMatrix alpha_new,
-	Rcpp::IntegerVector d_new)
+	Rcpp::NumericVector d_new)
 {
 	assert(K > 0);
 
@@ -162,7 +162,7 @@ static Rcpp::NumericMatrix x_tilde_3(Rcpp::NumericMatrix X,
 static Rcpp::NumericMatrix next_beta(int K,
 	Rcpp::IntegerMatrix groups, 
 	Rcpp::NumericMatrix alpha_new,
-	Rcpp::IntegerVector d_new,
+	Rcpp::NumericVector d_new,
 	Rcpp::NumericMatrix eta_new)
 {
 	assert(K > 0);
@@ -303,7 +303,7 @@ SEXP multitask(SEXP X0, SEXP y0, SEXP K0, SEXP groups0, SEXP lambda0, SEXP model
 	
 	Rcpp::NumericMatrix beta_cur = alpha_cur;
 
-	Rcpp::IntegerVector d_cur(L);
+	Rcpp::NumericVector d_cur(L);
 	std::fill(d_cur.begin(), d_cur.end(), 1);
 	
 	Rcpp::NumericMatrix eta_cur(L, K);
@@ -325,18 +325,20 @@ SEXP multitask(SEXP X0, SEXP y0, SEXP K0, SEXP groups0, SEXP lambda0, SEXP model
 		assert(lasso_result.size() == p * K);
 		Rcpp::NumericMatrix alpha_new(p, K, lasso_result.begin());
 		//printf("C++: alpha_new = \n"); print(alpha_new);
-
+		
+			
 		//update d
 		Rcpp::NumericMatrix Xtilde2 = x_tilde_2(X, K, groups, alpha_new, eta_cur);
 		lasso_result = lasso(Xtilde2, y, 1.0, model, true, eps, maxitersg);
 		assert(lasso_result.size() == L);
-		Rcpp::IntegerVector d_new(L);
+		Rcpp::NumericVector d_new(L);
 		for (int i = 0; i < L; i++) {
-			d_new[i] = sign(lasso_result[i]);
+		    //d_new[i] = sign(lasso_result[i]);
+			d_new[i] = lasso_result[i]/max(lasso_result);
 		}
-		
 		//printf("C++: d_new = \n"); print(d_new);
 		
+			
 		//update eta
 		Rcpp::NumericMatrix Xtilde3 = x_tilde_3(X, K, groups, alpha_new, d_new);
 		lasso_result = lasso(Xtilde3, y, 1.0, model, true, eps, maxitersg);

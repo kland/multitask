@@ -1,4 +1,4 @@
-multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linear", standardize=T,eps=1e-6,maxiter=500,maxiter.shotgun=200) {
+multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linear", standardize=T,eps=1e-6,maxiter=500,maxiter.shotgun=300) {
 
   tasks <- as.factor(tasks)             # ensure factor format
   K <- length(levels(tasks))            # tasks
@@ -67,7 +67,7 @@ calcLambda <- function(X,y,tasks,nlambda,model){
     lams <- c(lams,abs(drop(crossprod(X[tasks==task,], resids))))
   }
   lambda.max <- max(lams)
-  lambda.min <- 4*sqrt(max(n)+p)/10  
+  lambda.min <- 5*sqrt(max(n)+p)/10  
   lambda <- seq(lambda.max,lambda.min,length.out=nlambda)
   lambda
 }
