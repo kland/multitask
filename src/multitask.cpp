@@ -186,7 +186,20 @@ static Rcpp::NumericMatrix next_beta(int K,
 }
 
 
-static double bic(Rcpp::NumericMatrix X, 
+static int df(Rcpp::NumericMatrix beta_new, double eps)
+{
+	int result = 0;
+	int N = beta_new.nrow() * beta_new.ncol();
+	for (int i = 0; i < N; i++) {
+		if (fabs(beta_new[i]) > eps) {
+			 result++;
+		}
+	}
+	return result;
+}
+
+
+static double bic_linear(Rcpp::NumericMatrix X, 
 	Rcpp::NumericVector y, 
 	Rcpp::NumericMatrix beta_new, 
 	double eps, 
@@ -197,15 +210,6 @@ static double bic(Rcpp::NumericMatrix X,
 	int p = X.ncol();
 	int K = X.nrow() / n;
 	
-	/*calculate df*/
-	int df = 0;
-	int N = beta_new.nrow() * beta_new.ncol();
-	for (int i = 0; i < N; i++) {
-		if (fabs(beta_new[i]) > eps) {
-			 df++;
-		}
-	}
-
 	/*calculate SSe*/
 	double SSe = 0.0;
 	for (int k = 0; k < K; k++) {
@@ -219,9 +223,36 @@ static double bic(Rcpp::NumericMatrix X,
 	}
 	
 	double ll = -y.size() / 2.0 * (log(SSe) - log(y.size()) + log(2.0 * M_PI) + 1);
-	double result = -2 * ll + df * log(y.size());
+	double bic = -2 * ll + df(beta_new, eps) * log(y.size());
 
-	return result;
+	return bic;
+}
+
+
+static double bic_logistic(Rcpp::NumericMatrix X, 
+	Rcpp::NumericVector y, 
+	Rcpp::NumericMatrix beta_new, 
+	double eps, 
+	int n)
+{
+	assert(n > 0);
+	
+	int p = X.ncol();
+	int K = X.nrow() / n;
+
+	double ll = 0.0;
+	for (int k = 0; k < K; k++) {
+		for (int i = k * n; i < (k + 1) * n; i++) {
+			double lp = 0.0;
+			for (int j = 0; j < p; j++) {
+				lp += elem(X, i, j) * elem(beta_new, j, k);
+			}
+			ll += y[i] * lp - log(1.0 + exp(lp));
+		}
+	}
+
+	double bic = -2.0 * ll + df(beta_new, eps) * log(y.size());
+	return bic;
 }
 
 
@@ -374,7 +405,16 @@ SEXP multitask(SEXP X0, SEXP y0, SEXP K0, SEXP groups0, SEXP lambda0, SEXP model
 	result["alpha"] = alpha_cur;
 	result["d"] = d_cur;
 	result["eta"] = eta_cur;
-	result["bic"] = bic(X, y, beta_new, eps, n);
+	switch (model) {
+		case MULTITASK_LINEAR:
+			result["bic"] = bic_linear(X, y, beta_new, eps, n);
+			break;
+		case MULTITASK_LOGISTIC:
+			result["bic"] = bic_logistic(X, y, beta_new, eps, n);
+			break;
+		default:
+			assert(0);
+	}
 	result["converged"] = converged;
 	
 	return result;
