@@ -56,6 +56,9 @@ multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linea
 }
 
 calcLambda <- function(X,y,tasks,nlambda,model){
+  K <- length(levels(tasks))
+  n <- as.numeric(table(tasks))
+  p <- ncol(X)
   lams <- c()
   for(k in 1:K){
     task <- levels(tasks)[k]
