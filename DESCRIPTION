@@ -1,11 +1,11 @@
 Package: multitask
 Type: Package
-Title: What the package does (short line)
+Title: Variable Selection With Group Overlap in a Multitask Setting
 Version: 1.0
-Date: 2013-04-23
-Author: Who wrote it
-Maintainer: Who to complain to <yourfault@somewhere.net>
+Date: 2013-09-04
+Author: Alexandra Jauhiainen and Karl Landström
+Maintainer: Alexandra Jauhiainen <alexandra.jauhiainen@ki.se>, Karl Landström <karl.landstrom@ki.se>
 Description: More about what it does (maybe more than one line)
-License: What Licence is it under ?
+License: GPL version 3
 Depends: Rcpp (>= 0.10.3)
 LinkingTo: Rcpp
