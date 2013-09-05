@@ -24,9 +24,6 @@ multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linea
   }
   lambda <- sort(lambda,decreasing=T)
 
-  if(model=="logistic")
-    y[y==0] <- -1 #format to fit shotgun input
-  
   fit <- NULL; nlambda <- length(lambda)
   for(i in 1:nlambda){
     temp.fit <- .Call("multitask", X, y, K, groups, lambda[i], model.num, eps, maxiter, maxiter.shotgun, PACKAGE = "multitask")

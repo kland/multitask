@@ -290,6 +290,12 @@ static Rcpp::NumericVector lasso(Rcpp::NumericMatrix X,
 	if (model == MULTITASK_LINEAR) {
 		solveLasso(&data, lambda * 2, positive, regpathLength, eps, maxiter, verbose);
 	} else if (model == MULTITASK_LOGISTIC) {
+		//convert 0/1 responses to -1/1 responses required by shotgun
+		for (int i = 0; i < data.y.size(); i++) {
+			if (data.y[i] == 0.0) {
+				data.y[i] = -1.0;
+			}
+		}
 		compute_logreg(&data, lambda, positive, eps, maxiter, verbose, all_zero);
 	}else{
 		fprintf(stderr, "Unknown method\n");
