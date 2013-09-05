@@ -315,7 +315,7 @@ SEXP multitask(SEXP X0, SEXP y0, SEXP K0, SEXP groups0, SEXP lambda0, SEXP model
 	int maxitersg = Rcpp::as<int>(maxitersg0);
 
 	assert(K > 0);
-	assert(lambda >= 0.0);
+	assert(lambda > 0.0);
 	assert(model >= 0);
 	assert(model < MULTITASK_MODEL_COUNT);
 	assert(eps > 0.0);
