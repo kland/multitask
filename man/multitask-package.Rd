@@ -44,9 +44,8 @@ Maintainer: Alexandra Jauhiainen <alexandra.jauhiainen@ki.se>, Karl Landström <
 \references{
 Shotgun C++ package: http://www.select.cs.cmu.edu/projects/shotgun/
 }
-~~ Optionally other standard keywords, one per line, from file KEYWORDS in ~~
-~~ the R documentation directory ~~
-\keyword{ package }
+\keyword{models}
+\keyword{regression}
 \seealso{
 ~~ Optional links to other man pages, e.g. ~~
 ~~ \code{\link[<pkg>:<pkg>-package]{<pkg>}} ~~
