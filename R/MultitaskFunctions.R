@@ -2,10 +2,10 @@ multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linea
 
   tasks <- as.factor(tasks)             # ensure factor format
   K <- length(levels(tasks))            # tasks
-  n <- as.numeric(table(tasks))		# replicates
   p <- ncol(X)			        # predictors
   L <- ncol(groups)			# groups
-
+  nk = as.numeric(table(tasks)[unique(tasks)])      # number of obs in each task
+  
   if (model == "linear") {
     model.num <- 0
   } else if(model=="logistic") {
@@ -23,10 +23,10 @@ multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linea
     lambda <- calcLambda(X,y,tasks,nlambda,model)
   }
   lambda <- sort(lambda,decreasing=T)
-
+     
   fit <- NULL; nlambda <- length(lambda)
   for(i in 1:nlambda){
-    temp.fit <- .Call("multitask", X, y, K, groups, lambda[i], model.num, eps, maxiter, maxiter.shotgun, PACKAGE = "multitask")
+    temp.fit <- .Call("multitask", X, y, nk, groups, lambda[i], model.num, eps, maxiter, maxiter.shotgun, PACKAGE = "multitask")
     if(!temp.fit$converged){
       break; #skip rest of lambdas, since they are likely to not converge either
     }
@@ -52,23 +52,27 @@ multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linea
   fit
 }
 
+
 calcLambda <- function(X,y,tasks,nlambda,model){
-  K <- length(levels(tasks))
-  n <- as.numeric(table(tasks))
-  p <- ncol(X)
-  lams <- c()
-  for(k in 1:K){
-    task <- levels(tasks)[k]
-    if(model=="linear"){
-      resids <- y[tasks==task]
+    lams <- c()
+    n <- as.numeric(table(tasks))	
+    K <- length(levels(tasks))
+    p <- ncol(X)
+    for(k in 1:K){
+        task <- levels(tasks)[k]
+        if(model=="linear"){
+            resids <- y[tasks==task]
     }else if(model=="logistic"){
-      resids <- y[tasks==task] - 0.5 #demands 0/1 for y
+        resids <- y[tasks==task] - 0.5 #demands 0/1 for y
     } 
-    lams <- c(lams,abs(drop(crossprod(X[tasks==task,], resids))))
-  }
-  lambda.max <- max(lams)
-  lambda.min <- 5*sqrt(max(n)+p)/10  
-  lambda <- seq(lambda.max,lambda.min,length.out=nlambda)
-  lambda
+        lams <- c(lams,abs(drop(crossprod(X[tasks==task,,drop=F], resids))))
+    }
+    lambda.max <- max(lams)
+    if(model=="linear")
+        lambda.min <- 5*sqrt(max(n)+p)/10
+    else
+        lambda.min <- 2*sqrt(max(n)+p)/10
+    lambda <- seq(lambda.max,lambda.min,length.out=nlambda)
+    lambda
 }
 

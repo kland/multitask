@@ -52,4 +52,5 @@ simstudy.linear <- function () {
 
 	#run method for a sequence of lambdas
 	out <- multitask(X,y,tasks,groups,lambda=40,model="linear")
+        out
 }

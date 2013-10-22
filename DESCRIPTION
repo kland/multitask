@@ -2,7 +2,7 @@ Package: multitask
 Type: Package
 Title: Variable Selection With Group Overlap in a Multitask Setting
 Version: 1.0
-Date: 2013-09-04
+Date: 2013-09-22
 Author: Alexandra Jauhiainen and Karl Landstrom
 Maintainer: Alexandra Jauhiainen <alexandra.jauhiainen@ki.se>, Karl Landstrom <karl.landstrom@ki.se>
 Description: More about what it does (maybe more than one line)

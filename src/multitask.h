@@ -9,6 +9,6 @@
 #define MULTITASK_MODEL_COUNT 2
 
 RcppExport
-SEXP multitask(SEXP X, SEXP y, SEXP K, SEXP groups, SEXP lambda, SEXP model, SEXP eps, SEXP maxiter,SEXP maxitersg);
+SEXP multitask(SEXP X, SEXP y, SEXP nk, SEXP groups, SEXP lambda, SEXP model, SEXP eps, SEXP maxiter,SEXP maxitersg);
 
 #endif
