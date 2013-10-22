@@ -27,8 +27,8 @@ multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linea
   fit <- NULL; nlambda <- length(lambda)
   for(i in 1:nlambda){
     temp.fit <- .Call("multitask", X, y, nk, groups, lambda[i], model.num, eps, maxiter, maxiter.shotgun, PACKAGE = "multitask")
-    fit$converged <- c(fit$converged, temp.fit$converged) 
     if(temp.fit$converged){
+      fit$converged <- c(fit$converged, temp.fit$converged) 
       fit$beta <- cbind(fit$beta, as.numeric(temp.fit$beta))
       fit$alpha <- cbind(fit$alpha, as.numeric(temp.fit$alpha))
       fit$eta <- cbind(fit$eta,as.numeric(temp.fit$eta))
