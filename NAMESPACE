@@ -1,2 +1,2 @@
 useDynLib(multitask)
-exportPattern("^[[:alpha:]]+")
+exportPattern("^[[:alnum:]]+")

@@ -48,13 +48,13 @@ static void print(Rcpp::NumericMatrix A)
 }
 
 
-/*static void print(Rcpp::NumericVector a)
+static void print(Rcpp::IntegerVector a)
 {
 	for (int i = 0; i < a.size(); i++) {
 		printf("%d ", a[i]);
 	}
 	putchar('\n');
-}*/
+}
 
 
 static void print(Rcpp::NumericVector a)
@@ -380,8 +380,8 @@ SEXP multitask(SEXP X0, SEXP y0, SEXP nk0, SEXP groups0, SEXP lambda0, SEXP mode
     for (int i = 0; i < L; i++) {
       //d_new[i] = sign(lasso_result[i]);
       d_new[i] = lasso_result[i]/max(lasso_result);
-      //d_new[i] = lasso_result[i];
-    }
+      if(std::isnan(d_new[i])) d_new[i] = 0;
+   }
     //printf("C++: d_new = \n"); print(d_new);
 		
     //update eta
@@ -425,6 +425,115 @@ SEXP multitask(SEXP X0, SEXP y0, SEXP nk0, SEXP groups0, SEXP lambda0, SEXP mode
     break;
   case MULTITASK_LOGISTIC:
     result["bic"] = bic_logistic(X, y, beta_new, eps, nk);
+    break;
+  default:
+    assert(0);
+  }
+  result["converged"] = converged;
+  
+  return result;
+}
+
+
+SEXP grplasso(SEXP X0, SEXP y0, SEXP n0, SEXP groups0, SEXP lambda0, SEXP model0, SEXP eps0, SEXP maxiter0,SEXP maxitersg0)
+{
+  Rcpp::NumericVector lasso_result;
+  
+  //convert parameters to Rcpp types
+  Rcpp::NumericMatrix X(X0);
+  Rcpp::NumericVector y(y0);
+  Rcpp::IntegerMatrix groups(groups0);
+  double lambda = Rcpp::as<double>(lambda0);
+  int model = Rcpp::as<int>(model0);
+  double eps = Rcpp::as<double>(eps0);
+  int maxiter = Rcpp::as<int>(maxiter0);
+  int maxitersg = Rcpp::as<int>(maxitersg0);
+  Rcpp::IntegerVector n(n0);
+  int K = 1;
+ 
+  assert(lambda >= 0.0);
+  assert(model >= 0);
+  assert(model < MULTITASK_MODEL_COUNT);
+  assert(eps > 0.0);
+  assert(maxiter > 0);
+  
+  int p = groups.nrow();
+  int L = groups.ncol();
+  
+  //initialize start values  
+  Rcpp::NumericMatrix alpha_cur(p, K);
+  for (int i = 0; i < p * K; i++) {
+    alpha_cur[i] = random(-0.1, 0.1);
+  }
+  
+  Rcpp::NumericMatrix beta_cur = alpha_cur;
+  
+  Rcpp::NumericVector d_cur(L);
+  std::fill(d_cur.begin(), d_cur.end(), 1.0);
+  
+  Rcpp::NumericMatrix eta_cur(L, K);
+  std::fill(eta_cur.begin(), eta_cur.end(), 1.0);
+	
+  Rcpp::NumericMatrix beta_new;
+ 
+  bool converged = false;
+  int iterations = 0;
+  
+  do {
+    ++iterations;
+    if (iterations >= maxiter && maxiter > 0) {
+      break;
+    }
+    //update alpha
+    Rcpp::NumericMatrix Xtilde = x_tilde(X, n, groups, d_cur, eta_cur);
+    //printf("C++: number of rows = \n"); print(beta_new);
+  lasso_result = lasso(Xtilde, y, lambda, model, false, eps, maxiter);
+    assert(lasso_result.size() == p * K);
+    Rcpp::NumericMatrix alpha_new(p, K, lasso_result.begin());
+    
+    //update d
+    Rcpp::NumericMatrix Xtilde2 = x_tilde_2(X, n, groups, alpha_new, eta_cur);
+    lasso_result = lasso(Xtilde2, y, 1.0, model, true, eps, maxitersg);
+    assert(lasso_result.size() == L);
+    Rcpp::NumericVector d_new(L);
+    for (int i = 0; i < L; i++) {
+      d_new[i] = lasso_result[i]/max(lasso_result);
+      if(std::isnan(d_new[i])) d_new[i] = 0;
+    }
+  		
+    //update beta
+    beta_new = next_beta(n, groups, alpha_new, d_new, eta_cur);
+    assert(beta_new.nrow() == p);
+    assert(beta_new.ncol() == K);
+    //printf("C++: beta_new = \n"); print(beta_new);
+    
+    double max_diff = 0.0;
+    for (int i = 0; i < p * K; i++) {
+      double diff = fabs(beta_new[i] - beta_cur[i]);
+      if (diff > max_diff) {
+	max_diff = diff;
+      }
+    }
+    if (max_diff < eps) {
+      converged = true;
+    }
+    
+    alpha_cur = alpha_new;
+    d_cur = d_new;
+    beta_cur = beta_new;
+  } while (converged != true);
+  
+  Rcpp::List result;
+  result["beta"] = beta_cur;
+  result["alpha"] = alpha_cur;
+  result["d"] = d_cur;
+  result["eta"] = eta_cur;
+  switch (model) {
+  case MULTITASK_LINEAR:
+    result["bic"] = bic_linear(X, y, beta_new, eps, n);
+    break;
+  case MULTITASK_LOGISTIC:
+    result["bic"] = bic_logistic(X, y, beta_new, eps, n);
     break;
   default:
     assert(0);

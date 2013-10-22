@@ -51,7 +51,7 @@ multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linea
   fit
 }
 
-grplasso <- function(X, y, groups, lambda=NULL, nlambda=20, model="linear", standardize=T,eps=1e-6,maxiter=500,maxiter.shotgun=300) {
+grplasso<- function(X, y, groups, lambda=NULL, nlambda=20, model="linear", standardize=T,eps=1e-6,maxiter=500,maxiter.shotgun=300) {
 
   n <- length(y)		        # replicates
   p <- ncol(X)			        # predictors
@@ -78,7 +78,7 @@ grplasso <- function(X, y, groups, lambda=NULL, nlambda=20, model="linear", stan
   
   fit <- NULL; nlambda <- length(lambda)
    for(i in 1:nlambda){
-     temp.fit <- .Call("multitask", X, y, n, groups, lambda[i], model.num, eps, maxiter, maxiter.shotgun, PACKAGE = "multitask")
+     temp.fit <- .Call("grplasso", X, y, n, groups, lambda[i], model.num, eps, maxiter, maxiter.shotgun, PACKAGE = "multitask")
      if(temp.fit$converged){
        fit$converged <- c(fit$converged, temp.fit$converged) 
        fit$beta <- cbind(fit$beta, as.numeric(temp.fit$beta))
@@ -97,6 +97,7 @@ grplasso <- function(X, y, groups, lambda=NULL, nlambda=20, model="linear", stan
   fit$groups <- groups
   fit
 }
+
 
 calcLambda <- function(X,y,tasks,nlambda,model){
     lams <- c()
