@@ -1,4 +1,4 @@
-multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linear", standardize=T,eps=1e-6,maxiter=500,maxiter.shotgun=300) {
+multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linear", standardize=T,conv.eps=1e-3, eps=1e-6,maxiter=100,maxiter.shotgun=300) {
 
   tasks <- as.factor(tasks)             # ensure factor format
   K <- length(levels(tasks))            # tasks
@@ -26,11 +26,10 @@ multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linea
      
   fit <- NULL; nlambda <- length(lambda)
   for(i in 1:nlambda){
-    temp.fit <- .Call("multitask", X, y, nk, groups, lambda[i], model.num, eps, maxiter, maxiter.shotgun, PACKAGE = "multitask")
+    temp.fit <- .Call("multitask", X, y, nk, groups, lambda[i], model.num, conv.eps, eps, maxiter, maxiter.shotgun, PACKAGE = "multitask")
     if(temp.fit$converged){
       fit$converged <- c(fit$converged, temp.fit$converged) 
       fit$beta <- cbind(fit$beta, as.numeric(temp.fit$beta))
-      fit$alpha <- cbind(fit$alpha, as.numeric(temp.fit$alpha))
       fit$eta <- cbind(fit$eta,as.numeric(temp.fit$eta))
       fit$d <- cbind(fit$d, temp.fit$d)
       fit$bic <- c(fit$bic, as.numeric(temp.fit$bic)) 
@@ -41,17 +40,17 @@ multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linea
   if(is.null(fit)){
     warning("No lambdas converged. Try to give larger lambdas or, as a second option, increase the maxiter parameter.")
   }else{   
-    fit$alpha <- array(fit$alpha, dim=c(p,K,ncol(fit$alpha)))
     fit$beta <- array(fit$beta, dim=c(p,K,ncol(fit$beta)))
     fit$eta <- array(fit$eta, dim=c(L,K,ncol(fit$eta)))
   }
 
   fit$tasks <- tasks
   fit$groups <- groups
+  fit$model <- model
   fit
 }
 
-grplasso<- function(X, y, groups, lambda=NULL, nlambda=20, model="linear", standardize=T,eps=1e-6,maxiter=500,maxiter.shotgun=300) {
+grplasso<- function(X, y, groups, lambda=NULL, nlambda=20, model="linear", standardize=T,conv.eps=1e-3, eps=1e-6,maxiter=100,maxiter.shotgun=300) {
 
   n <- length(y)		        # replicates
   p <- ncol(X)			        # predictors
@@ -78,12 +77,10 @@ grplasso<- function(X, y, groups, lambda=NULL, nlambda=20, model="linear", stand
   
   fit <- NULL; nlambda <- length(lambda)
    for(i in 1:nlambda){
-     temp.fit <- .Call("grplasso", X, y, n, groups, lambda[i], model.num, eps, maxiter, maxiter.shotgun, PACKAGE = "multitask")
+     temp.fit <- .Call("grplasso", X, y, n, groups, lambda[i], model.num, conv.eps, eps, maxiter, maxiter.shotgun, PACKAGE = "multitask")
      if(temp.fit$converged){
        fit$converged <- c(fit$converged, temp.fit$converged) 
        fit$beta <- cbind(fit$beta, as.numeric(temp.fit$beta))
-       fit$alpha <- cbind(fit$alpha, as.numeric(temp.fit$alpha))
-       fit$eta <- cbind(fit$eta,as.numeric(temp.fit$eta))
        fit$d <- cbind(fit$d, temp.fit$d)
        fit$bic <- c(fit$bic, as.numeric(temp.fit$bic)) 
        fit$lambda <- c(fit$lambda,lambda[i])
@@ -95,6 +92,7 @@ grplasso<- function(X, y, groups, lambda=NULL, nlambda=20, model="linear", stand
   }
   
   fit$groups <- groups
+  fit$model <- model
   fit
 }
 
