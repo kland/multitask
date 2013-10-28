@@ -415,7 +415,7 @@ static Rcpp::NumericMatrix refit_model(Rcpp::NumericMatrix X,
 }
 
 
-SEXP multitask(SEXP X0, SEXP y0, SEXP nk0, SEXP groups0, SEXP lambda0, SEXP model0, SEXP conveps0, SEXP eps0, SEXP maxiter0,SEXP maxitersg0)
+SEXP multitask(SEXP X0, SEXP y0, SEXP nk0, SEXP groups0, SEXP lambda0, SEXP corrfactor0, SEXP model0, SEXP conveps0, SEXP eps0, SEXP maxiter0,SEXP maxitersg0)
 {
   Rcpp::NumericVector lasso_result;
   
@@ -425,6 +425,7 @@ SEXP multitask(SEXP X0, SEXP y0, SEXP nk0, SEXP groups0, SEXP lambda0, SEXP mode
   Rcpp::IntegerVector nk(nk0);
   int K = nk.size();
   Rcpp::IntegerMatrix groups(groups0);
+  Rcpp::NumericVector corrfactor(corrfactor0);
   double lambda = Rcpp::as<double>(lambda0);
   int model = Rcpp::as<int>(model0);
   double eps = Rcpp::as<double>(eps0);
@@ -476,7 +477,7 @@ SEXP multitask(SEXP X0, SEXP y0, SEXP nk0, SEXP groups0, SEXP lambda0, SEXP mode
     int idx = 0; int n; 
     for(int k=0; k < K; k++){
       n = nk[k];
-      lasso_result = lasso(Xtilde(Rcpp::Range(idx,idx+n-1), Rcpp::Range(p*k, p*(k+1)-1)), y[Rcpp::Range(idx,idx+n-1)], lambda, model, false, eps, maxitersg);
+      lasso_result = lasso(Xtilde(Rcpp::Range(idx,idx+n-1), Rcpp::Range(p*k, p*(k+1)-1)), y[Rcpp::Range(idx,idx+n-1)], lambda*corrfactor[k], model, false, eps, maxitersg);
       assert(lasso_result.size() == p);
       for (int j = 0; j < p; j++) {
 	alpha_new(j,k) = lasso_result[j];
@@ -495,11 +496,19 @@ SEXP multitask(SEXP X0, SEXP y0, SEXP nk0, SEXP groups0, SEXP lambda0, SEXP mode
    }
  		
     //update eta
+    Rcpp::NumericMatrix eta_new(L, K);
     Rcpp::NumericMatrix Xtilde3 = x_tilde_3(X, nk, groups, alpha_new, d_new);
-    lasso_result = lasso(Xtilde3, y, 1.0, model, true, eps, maxitersg);
-    assert(lasso_result.size() == L * K);
-    Rcpp::NumericMatrix eta_new(L, K, lasso_result.begin());
- 		
+    idx = 0;
+    for(int k=0; k < K; k++){
+      n = nk[k];
+      lasso_result = lasso(Xtilde3(Rcpp::Range(idx,idx+n-1),Rcpp::Range(L*k, L*(k+1)-1)), y[Rcpp::Range(idx,idx+n-1)], 1.0, model, true, eps, maxitersg);
+      assert(lasso_result.size() == L);
+      for (int l = 0; l < L; l++) {
+	eta_new(l,k) = lasso_result[l];
+      }
+      idx += n; 
+    }
+  		
     //update beta
     beta_new = next_beta(nk, groups, alpha_new, d_new, eta_new);
     assert(beta_new.nrow() == p);
@@ -568,6 +577,7 @@ SEXP grplasso(SEXP X0, SEXP y0, SEXP n0, SEXP groups0, SEXP lambda0, SEXP model0
   int maxitersg = Rcpp::as<int>(maxitersg0);
   Rcpp::IntegerVector n(n0);
   int K = 1;
+ 
  
   assert(lambda >= 0.0);
   assert(model >= 0);

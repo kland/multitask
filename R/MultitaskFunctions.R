@@ -1,11 +1,12 @@
-multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linear", standardize=T,conv.eps=1e-3, eps=1e-6,maxiter=100,maxiter.shotgun=300) {
+multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linear", standardize=T,delta=1,conv.eps=1e-3, eps=1e-6,maxiter=100,maxiter.shotgun=300) {
 
   tasks <- as.factor(tasks)             # ensure factor format
   K <- length(levels(tasks))            # tasks
   p <- ncol(X)			        # predictors
   L <- ncol(groups)			# groups
-  nk = as.numeric(table(tasks)[unique(tasks)])      # number of obs in each task
-  
+  nk <- as.numeric(table(tasks)[unique(tasks)])      # number of obs in each task
+  nkm <- mean(nk)
+    
   if (model == "linear") {
     model.num <- 0
   } else if(model=="logistic") {
@@ -26,7 +27,8 @@ multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linea
      
   fit <- NULL; nlambda <- length(lambda)
   for(i in 1:nlambda){
-    temp.fit <- .Call("multitask", X, y, nk, groups, lambda[i], model.num, conv.eps, eps, maxiter, maxiter.shotgun, PACKAGE = "multitask")
+    corr.factor <- (nkm^delta * nk^(1-delta))/nkm
+    temp.fit <- .Call("multitask", X, y, nk, groups, lambda[i], corr.factor,  model.num, conv.eps, eps, maxiter, maxiter.shotgun, PACKAGE = "multitask")
     if(temp.fit$converged){
       fit$converged <- c(fit$converged, temp.fit$converged) 
       fit$beta <- cbind(fit$beta, as.numeric(temp.fit$beta))
@@ -34,6 +36,7 @@ multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linea
       fit$d <- cbind(fit$d, temp.fit$d)
       fit$bic <- c(fit$bic, as.numeric(temp.fit$bic)) 
       fit$lambda <- c(fit$lambda,lambda[i])
+      fit$corr.factor <- cbind(fit$corr.factor,as.numeric(corr.factor))
     }
   }
 
@@ -47,6 +50,7 @@ multitask <- function(X, y, tasks, groups, lambda=NULL, nlambda=20, model="linea
   fit$tasks <- tasks
   fit$groups <- groups
   fit$model <- model
+  fit$delta <- delta
   fit
 }
 
